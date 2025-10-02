@@ -12,17 +12,24 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Intelimed"
         tools:targetApi="31">
+
+        <!-- Agora a SignInActivity é a primeira tela que abre -->
         <activity
-            android:name=".MainActivity"
+            android:name=".SignInActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.Intelimed">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- MainActivity continua disponível, mas não abre sozinha -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Intelimed" />
+
     </application>
 
 </manifest>
