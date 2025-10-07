@@ -16,7 +16,6 @@ import br.com.ibm.intelimed.ui.theme.IntelimedTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             IntelimedTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
