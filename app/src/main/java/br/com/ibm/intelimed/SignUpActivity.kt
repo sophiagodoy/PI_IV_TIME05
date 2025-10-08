@@ -3,6 +3,8 @@
 package br.com.ibm.intelimed
 
 import android.os.Bundle
+import android.content.Context
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -27,6 +29,8 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.tooling.preview.Preview
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import android.util.Patterns
+import com.google.firebase.auth.FirebaseAuth
 
 // Activity principal da tela de cadastro
 class SignUpActivity : ComponentActivity() {
@@ -36,6 +40,22 @@ class SignUpActivity : ComponentActivity() {
             SignUp()
         }
     }
+}
+
+// Alice adicionou apenas para anotações futuras, mas a validação em banco de dados ainda não está sendo feita nessa etapa
+// Função para cadastrar o usuário no Firebase
+fun cadastrarUsuario(nome: String, email: String, senha: String, context: Context) {
+    FirebaseAuth.getInstance()
+        .createUserWithEmailAndPassword(email, senha)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Toast.makeText(context, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                // TODO: Navegar para a tela de login
+            } else {
+                val erro = task.exception?.message ?: "Erro desconhecido."
+                Toast.makeText(context, "Falha no cadastro: $erro", Toast.LENGTH_SHORT).show()
+            }
+        }
 }
 
 // Composable da tela de cadastro
@@ -112,8 +132,6 @@ fun SignUp(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // TODO: adicionar verificação de e-mail válido
-
             Spacer(modifier = Modifier.height(12.dp))
 
             // Campo Senha
@@ -135,7 +153,6 @@ fun SignUp(modifier: Modifier = Modifier) {
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-            // TODO: VALIDAR SENHA, MÍNIMO DE CARACTERES
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -161,10 +178,26 @@ fun SignUp(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Botão Cadastrar
+            // Botão Cadastrar (com validações)
             Button(
                 onClick = {
-                    // TODO: IMPLEMENTAR LÓGICA DE CADASTRO
+                    when {
+                        nome.isBlank() -> {
+                            Toast.makeText(context, "Por favor, insira seu nome.", Toast.LENGTH_SHORT).show()
+                        }
+                        !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                            Toast.makeText(context, "E-mail inválido.", Toast.LENGTH_SHORT).show()
+                        }
+                        senha.length < 6 -> {
+                            Toast.makeText(context, "A senha deve ter pelo menos 6 caracteres.", Toast.LENGTH_SHORT).show()
+                        }
+                        senha != confirmarSenha -> {
+                            Toast.makeText(context, "As senhas não coincidem.", Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {
+                            cadastrarUsuario(nome, email, senha, context)
+                        }
+                    }
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF2FA49F),
