@@ -134,11 +134,19 @@ fun SignIn(modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Campo de senha com botão para mostrar/ocultar
+            // Campo de senha com botão para mostrar/ocultar e validação
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    passwordError = null // Limpa o erro quando o usuário digita
+                },
                 label = { Text("Senha") },
+                isError = passwordError != null, // Marca o campo como erro se houver mensagem
+                supportingText = {
+                    // Exibe a mensagem de erro abaixo do campo
+                    passwordError?.let { Text(it, color = Color.Red) }
+                },
 
                 // Altera entre mostrar ou ocultar o texto da senha
                 visualTransformation = if (passwordVisible) {
@@ -173,8 +181,6 @@ fun SignIn(modifier: Modifier = Modifier) {
 
                 modifier = Modifier.fillMaxWidth()
             )
-
-            // TODO: VALIDAR SE A SENHA NÃO ESTÁ VAZIA E TEM TAMANHO MÍNIMO
 
             Spacer(modifier = Modifier.height(20.dp))
 
