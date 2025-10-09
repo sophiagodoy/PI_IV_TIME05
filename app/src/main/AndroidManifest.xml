@@ -25,8 +25,18 @@
             </intent-filter>
         </activity>
 
-        <!-- (opcional) Outras Activities -->
-        <activity android:name=".MainActivity" android:exported="false" />
-    </application>
+    <activity
+        android:name=".TermsAndPrivacyActivity"
+        android:exported="false"
+        android:label="Termos e Privacidade"
+        android:theme="@style/Theme.Intelimed">
+    </activity>
+
+    <!-- Tela completa de termos -->
+    <activity
+        android:name=".TermsFullActivity"
+        android:exported="false"
+        android:label="Termos e Privacidade"
+        android:theme="@style/Theme.Intelimed" />
 
 </manifest>
