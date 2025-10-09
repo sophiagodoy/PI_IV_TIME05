@@ -25,12 +25,24 @@
             </intent-filter>
         </activity>
 
+        <!-- Tela principal -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Intelimed" />
+
+        <!-- Tela de Cadastro -->
+        <activity
+            android:name=".SignUpActivity"
+            android:exported="false"
+            android:label="Cadastro"
+            android:theme="@style/Theme.Intelimed"/>
         <activity
             android:name=".TermsOfUseActivity"
             android:exported="false"
             android:label="Termos e Privacidade"
-            android:theme="@style/Theme.Intelimed">
-        </activity>
+            android:theme="@style/Theme.Intelimed"/>
 
         <!-- Tela completa de termos -->
         <activity
@@ -38,6 +50,7 @@
             android:exported="false"
             android:label="Termos e Privacidade"
             android:theme="@style/Theme.Intelimed" />
+
     </application>
 
 </manifest>
