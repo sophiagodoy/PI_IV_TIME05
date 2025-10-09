@@ -61,6 +61,10 @@ fun SignIn(modifier: Modifier = Modifier) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    // Estados para controlar mensagens de erro de validação
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+
     var passwordVisible by remember { mutableStateOf(false) } // Controla se a senha está visível
     val context = LocalContext.current // Para mudança de tela
 
