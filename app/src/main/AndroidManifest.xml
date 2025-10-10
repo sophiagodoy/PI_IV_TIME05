@@ -70,7 +70,7 @@
             android:theme="@style/Theme.Intelimed" />
 
         <activity
-            android:name=".forwarding.GenerateForwardingActivity"
+            android:name=".GenerateForwardingActivity"
             android:exported="false"
             android:label="Tela para gerar encaminhamento"
             android:theme="@style/Theme.Intelimed"/>
