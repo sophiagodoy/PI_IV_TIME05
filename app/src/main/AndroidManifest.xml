@@ -69,6 +69,12 @@
             android:label="Tela de Primeiros Passos"
             android:theme="@style/Theme.Intelimed" />
 
+        <activity
+            android:name=".forwarding.GenerateForwardingActivity"
+            android:exported="false"
+            android:label="Tela para gerar encaminhamento"
+            android:theme="@style/Theme.Intelimed"/>
+
     </application>
 
 </manifest>
