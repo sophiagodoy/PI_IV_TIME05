@@ -57,6 +57,12 @@
             android:label="Tela de Login"
             android:theme="@style/Theme.Intelimed"/>
 
+        <activity
+            android:name=".ForgotPasswordActivity"
+            android:exported="false"
+            android:label="Tela para recuperar senha"
+            android:theme="@style/Theme.Intelimed"/>
+
     </application>
 
 </manifest>
