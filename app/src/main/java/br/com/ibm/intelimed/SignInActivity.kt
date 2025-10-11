@@ -61,8 +61,30 @@ fun SignIn(modifier: Modifier = Modifier) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    // Estados para controlar mensagens de erro de validação
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var passwordError by remember { mutableStateOf<String?>(null) }
+
     var passwordVisible by remember { mutableStateOf(false) } // Controla se a senha está visível
     val context = LocalContext.current // Para mudança de tela
+
+    // Função para validar o formato do e-mail
+    fun validateEmail(email: String): String? {
+        return when {
+            email.isBlank() -> "E-mail não pode estar vazio"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "E-mail inválido"
+            else -> null
+        }
+    }
+
+    // Função para validar a senha
+    fun validatePassword(password: String): String? {
+        return when {
+            password.isBlank() -> "Senha não pode estar vazia"
+            password.length < 6 -> "Senha deve ter no mínimo 6 caracteres"
+            else -> null
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -93,24 +115,38 @@ fun SignIn(modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // Campo de e-mail
+            // Campo de e-mail com validação
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = {
+                    email = it
+                    emailError = null // Limpa o erro quando o usuário digita
+                },
                 label = { Text("E-mail") },
+                isError = emailError != null, // Marca o campo como erro se houver mensagem
+                supportingText = {
+                    // Exibe a mensagem de erro abaixo do campo
+                    emailError?.let { Text(it, color = Color.Red) }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // TODO: VALIDAR SE O EMAIL ESTÁ EM FORMATO VÁLIDO
-
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Campo de senha com botão para mostrar/ocultar
+            // Campo de senha com botão para mostrar/ocultar e validação
             OutlinedTextField(
                 value = password,
-                onValueChange = { password = it },
+                onValueChange = {
+                    password = it
+                    passwordError = null // Limpa o erro quando o usuário digita
+                },
                 label = { Text("Senha") },
+                isError = passwordError != null, // Marca o campo como erro se houver mensagem
+                supportingText = {
+                    // Exibe a mensagem de erro abaixo do campo
+                    passwordError?.let { Text(it, color = Color.Red) }
+                },
 
                 // Altera entre mostrar ou ocultar o texto da senha
                 visualTransformation = if (passwordVisible) {
@@ -146,13 +182,20 @@ fun SignIn(modifier: Modifier = Modifier) {
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // TODO: VALIDAR SE A SENHA NÃO ESTÁ VAZIA E TEM TAMANHO MÍNIMO
-
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Botão de login
+            // Botão de login com validação
             Button(
-                onClick = { /* ação */ }, // TODO: IMPLEMENTAR LÓGICA DE AUTENTICAÇÃO
+                onClick = {
+                    // Valida os campos e armazena os erros
+                    emailError = validateEmail(email)
+                    passwordError = validatePassword(password)
+
+                    // Só prossegue se não houver erros
+                    if (emailError == null && passwordError == null) {
+                        // TODO: IMPLEMENTAR LÓGICA DE AUTENTICAÇÃO
+                    }
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF2FA49F),
                     contentColor = Color.White
