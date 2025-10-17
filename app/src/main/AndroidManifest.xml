@@ -76,7 +76,7 @@
 
         <!-- Registro de sintomas -->
         <activity
-            android:name=".RegistroSintomasActivity"
+            android:name=".SymptomLogActivity"
             android:exported="false"
             android:label="Registro de Sintomas"
             android:theme="@style/Theme.Intelimed" />
