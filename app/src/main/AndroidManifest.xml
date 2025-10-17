@@ -27,7 +27,13 @@
 
         <!-- Tela principal -->
         <activity
-            android:name=".MainActivity"
+            android:name=".MainPatientActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Intelimed" />
+
+        <activity
+            android:name=".MainDoctorActivity"
             android:exported="false"
             android:label="@string/app_name"
             android:theme="@style/Theme.Intelimed" />

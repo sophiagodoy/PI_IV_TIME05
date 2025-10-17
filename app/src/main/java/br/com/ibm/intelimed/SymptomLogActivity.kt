@@ -1,16 +1,24 @@
+// TELA DE REGISTRO DE SINTOMAS DO PACIENTE
+
 package br.com.ibm.intelimed
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -91,12 +99,58 @@ fun RegistroSintomas() {
             verticalArrangement = Arrangement.spacedBy(22.dp)
         ) {
 
+
             Text(
                 text = "DADOS GERAIS",
                 color = Color(0xFF007C7A),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
+
+            var expanded by remember { mutableStateOf(false) }
+            var selectedEspecialidade by remember { mutableStateOf("") }
+
+            // Lista vazia (depois você vai preencher do banco)
+            val especialidades = listOf<String>()
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = selectedEspecialidade,
+                    onValueChange = {},
+                    label = { Text("Selecione a especialidade") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = true },
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { expanded = !expanded }) {
+                            Icon(
+                                imageVector = if (expanded)
+                                    Icons.Default.KeyboardArrowUp
+                                else
+                                    Icons.Default.KeyboardArrowDown,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                )
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    especialidades.forEach { especialidade ->
+                        DropdownMenuItem(
+                            text = { Text(especialidade) },
+                            onClick = {
+                                selectedEspecialidade = especialidade
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = sentimento,
@@ -264,6 +318,7 @@ fun RegistroSintomas() {
             )
 
             var mostrarDialogo by remember { mutableStateOf(false) }
+            val context = LocalContext.current
 
             if (mostrarDialogo) {
                 AlertDialog(
@@ -273,7 +328,8 @@ fun RegistroSintomas() {
                     confirmButton = {
                         TextButton(onClick = {
                             mostrarDialogo = false
-                            // ⚙️ Aqui você coloca a lógica para realmente enviar os dados
+                            val intent = Intent(context, ConfirmationActivity::class.java)
+                            context.startActivity(intent)
                         }) {
                             Text("Sim")
                         }
