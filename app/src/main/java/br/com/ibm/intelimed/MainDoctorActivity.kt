@@ -1,17 +1,14 @@
 package br.com.ibm.intelimed
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -27,7 +24,7 @@ class MainDoctorActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             IntelimedTheme {
-                DoctorHomeScreen()
+                DoctorHome()
             }
         }
     }
@@ -35,7 +32,7 @@ class MainDoctorActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DoctorHomeScreen() {
+fun DoctorHome() {
     val teal = Color(0xFF007C7A)
     val cardBg = Color(0xFFF7FDFC)
     val context = LocalContext.current
@@ -94,7 +91,10 @@ fun DoctorHomeScreen() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OptionCard("Pacientes", Icons.Default.Person) { /* abrir lista de pacientes */ }
+                OptionCard("Pacientes", Icons.Default.Person) {
+                    val intent = android.content.Intent(context, PatientListActivity::class.java)
+                    context.startActivity(intent)
+                }
                 OptionCard("Chat", Icons.Default.Chat) { /* abrir chat com paciente */ }
             }
 
@@ -115,6 +115,6 @@ fun DoctorHomeScreen() {
 @Composable
 fun DoctorHomeActivityPreview() {
     IntelimedTheme {
-        DoctorHomeScreen()
+        DoctorHome()
     }
 }
