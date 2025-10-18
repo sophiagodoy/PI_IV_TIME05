@@ -1,5 +1,6 @@
 package br.com.ibm.intelimed
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,7 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -17,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import com.google.firebase.auth.FirebaseAuth
 
 class MainDoctorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,8 +36,8 @@ class MainDoctorActivity : ComponentActivity() {
 @Composable
 fun DoctorHome() {
     val teal = Color(0xFF007C7A)
-    val cardBg = Color(0xFFF7FDFC)
     val context = LocalContext.current
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -44,7 +46,11 @@ fun DoctorHome() {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = teal),
                 actions = {
                     IconButton(onClick = { /* Notificações */ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.White)
+                        Icon(
+                            Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
                     }
                 }
             )
@@ -59,9 +65,9 @@ fun DoctorHome() {
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* perfil */ },
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text("Perfil") }
+                    onClick = { showLogoutDialog = true },
+                    icon = { Icon(Icons.Default.Logout, contentDescription = null) },
+                    label = { Text("Sair") }
                 )
             }
         }
@@ -81,7 +87,7 @@ fun DoctorHome() {
                 color = Color.Black
             )
             Text(
-                text = "Olá, Dr. Arthur", // ou nome do doutor dinamicamente
+                text = "Olá, Dr. Arthur", // pode ser dinâmico depois
                 fontSize = 18.sp,
                 color = Color.DarkGray
             )
@@ -92,10 +98,10 @@ fun DoctorHome() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OptionCard("Pacientes", Icons.Default.Person) {
-                    val intent = android.content.Intent(context, PatientListActivity::class.java)
+                    val intent = Intent(context, PatientListActivity::class.java)
                     context.startActivity(intent)
                 }
-                OptionCard("Chat", Icons.Default.Chat) { /* abrir chat com paciente */ }
+                OptionCard("Chat", Icons.Default.Chat) { /* abrir chat */ }
             }
 
             Row(
@@ -109,11 +115,36 @@ fun DoctorHome() {
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
+
+    // Popup de confirmação de logout
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Confirmar saída") },
+            text = { Text("Deseja realmente sair da sua conta?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    FirebaseAuth.getInstance().signOut()
+                    showLogoutDialog = false
+                    val intent = Intent(context, AuthChoiceActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    context.startActivity(intent)
+                }) {
+                    Text("Sim", color = teal)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Não", color = Color.Gray)
+                }
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun DoctorHomeActivityPreview() {
+fun DoctorHomePreview() {
     IntelimedTheme {
         DoctorHome()
     }

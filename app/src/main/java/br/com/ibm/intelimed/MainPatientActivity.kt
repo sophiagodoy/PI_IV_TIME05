@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -25,7 +25,7 @@ class MainPatientActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             IntelimedTheme {
-                PatientHomeScreen()
+                PatientHome()
             }
         }
     }
@@ -33,10 +33,13 @@ class MainPatientActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PatientHomeScreen() {
+fun PatientHome() {
     val teal = Color(0xFF007C7A)
     val cardBg = Color(0xFFF7FDFC)
     val context = LocalContext.current
+
+    // Estado do diálogo de confirmação de saída
+    var mostrarDialogoSair by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -45,7 +48,7 @@ fun PatientHomeScreen() {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = teal),
                 actions = {
                     IconButton(onClick = { /* Notificações */ }) {
-                        Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.White)
+                        Icon(Icons.Default.Notifications, contentDescription = "Notificações", tint = Color.White)
                     }
                 }
             )
@@ -58,11 +61,13 @@ fun PatientHomeScreen() {
                     icon = { Icon(Icons.Default.Home, contentDescription = null) },
                     label = { Text("Início") }
                 )
+
+                // Ícone de saída no lugar do perfil
                 NavigationBarItem(
                     selected = false,
-                    onClick = { /* perfil */ },
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text("Perfil") }
+                    onClick = { mostrarDialogoSair = true },
+                    icon = { Icon(Icons.Default.Logout, contentDescription = "Sair") },
+                    label = { Text("Sair") }
                 )
             }
         }
@@ -93,7 +98,10 @@ fun PatientHomeScreen() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OptionCard("Chat", Icons.Default.Chat) { /* abrir chat */ }
-                OptionCard("Escolher Medico", Icons.Default.Description) { /* abrir relatórios */ }
+                OptionCard("Escolher Médico", Icons.Default.Description) {
+                    val intent = Intent(context, SymptomLogActivity::class.java)
+                    context.startActivity(intent)
+                }
             }
 
             Row(
@@ -104,7 +112,7 @@ fun PatientHomeScreen() {
                     val intent = Intent(context, MedicalGuidanceActivity::class.java)
                     context.startActivity(intent)
                 }
-                OptionCard("Feedback Medico", Icons.Default.Warning) { /* abrir sintomas */ }
+                OptionCard("Feedback Médico", Icons.Default.Warning) { /* abrir feedback */ }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -134,6 +142,30 @@ fun PatientHomeScreen() {
             ) {
                 Text("Ver orientações médicas", color = teal, fontSize = 16.sp)
             }
+        }
+
+        // Diálogo de confirmação de saída
+        if (mostrarDialogoSair) {
+            AlertDialog(
+                onDismissRequest = { mostrarDialogoSair = false },
+                title = { Text("Confirmar saída") },
+                text = { Text("Deseja realmente sair da sua conta?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        mostrarDialogoSair = false
+                        val intent = Intent(context, AuthChoiceActivity::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                    }) {
+                        Text("Sim", color = teal)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mostrarDialogoSair = false }) {
+                        Text("Não", color = Color.Gray)
+                    }
+                }
+            )
         }
     }
 }
@@ -167,6 +199,6 @@ fun RowScope.OptionCard(title: String, icon: androidx.compose.ui.graphics.vector
 @Composable
 fun MainPatientActivityPreview() {
     IntelimedTheme {
-        PatientHomeScreen()
+        PatientHome()
     }
 }

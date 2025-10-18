@@ -28,9 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.util.Patterns
-import com.google.firebase.auth.FirebaseAuth
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
-import com.google.firebase.firestore.FirebaseFirestore
 import android.content.Intent
 import android.util.Log
 import com.google.firebase.Firebase
@@ -48,14 +46,13 @@ class SignUpDoctorActivity : ComponentActivity() {
     }
 }
 
-fun registerDoctorAuth(email: String, password: String, nome: String, crm: String, context: Context) {
+fun registerDoctorAuth(email: String, password: String, nome: String, crm: String, especialidade: String, context: Context) {
     val auth = Firebase.auth
 
     auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
                 val user = auth.currentUser
-                val uid = user?.uid
 
                 if (user != null) {
                     // Extrai o identificador único do usuário autenticado (UID) gerado pelo Firebase
@@ -73,7 +70,7 @@ fun registerDoctorAuth(email: String, password: String, nome: String, crm: Strin
                         }
 
                     // Chama a função que salva no Firestore
-                    saveDoctorToFirestore(uid, nome, email, crm, context)
+                    saveDoctorToFirestore(uid, nome, email, crm, especialidade, context)
                 }
             } else {
                 val exception = task.exception
@@ -86,13 +83,14 @@ fun registerDoctorAuth(email: String, password: String, nome: String, crm: Strin
         }
 }
 
-fun saveDoctorToFirestore(uid: String, nome: String, email: String, crm: String, context: Context) {
+fun saveDoctorToFirestore(uid: String, nome: String, email: String, crm: String, especialidade: String, context: Context) {
     val db = Firebase.firestore
 
     val dadosMedico = hashMapOf(
         "nome" to nome,
         "email" to email,
         "crm" to crm,
+        "especialidade" to especialidade,
         "tipo" to "Médico"
     )
 
@@ -282,7 +280,7 @@ fun SignUpDoctor(modifier: Modifier = Modifier) {
                     Button(
                         onClick = {
                             tipoUsuario = "Paciente"
-                            val intent = android.content.Intent(context, SignUpPatientActivity::class.java)
+                            val intent = Intent(context, SignUpPatientActivity::class.java)
                             context.startActivity(intent)
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -329,7 +327,7 @@ fun SignUpDoctor(modifier: Modifier = Modifier) {
                                 Toast.makeText(context, "As senhas não coincidem.", Toast.LENGTH_SHORT).show()
                             }
                             else -> {
-                                registerDoctorAuth(email, senha, nome, crm, context)
+                                registerDoctorAuth(email, senha, nome, crm, especialidade, context)
                             }
                         }
                     },
@@ -353,7 +351,7 @@ fun SignUpDoctor(modifier: Modifier = Modifier) {
                     color = Color(0xFF2FA49F),
                     fontSize = 18.sp,
                     modifier = Modifier.clickable {
-                        val intent = android.content.Intent(context, SignInActivity::class.java)
+                        val intent = Intent(context, SignInActivity::class.java)
                         context.startActivity(intent)
                     }
                 )
