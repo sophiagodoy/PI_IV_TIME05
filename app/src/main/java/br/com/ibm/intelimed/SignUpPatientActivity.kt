@@ -31,6 +31,13 @@ import androidx.compose.ui.unit.sp
 import android.util.Patterns
 import com.google.firebase.auth.FirebaseAuth
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import android.content.Intent
+import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 
 class SignUpPatientActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,19 +48,66 @@ class SignUpPatientActivity : ComponentActivity() {
     }
 }
 
-// Função para cadastrar o usuário no Firebase
-fun cadastrarUsuario(nome: String, email: String, senha: String, context: Context) {
-    FirebaseAuth.getInstance()
-        .createUserWithEmailAndPassword(email, senha)
+fun registerPatientAuth(email: String, password: String, nome: String, context: Context) {
+
+    val auth = Firebase.auth
+
+    auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Toast.makeText(context, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
-                val intent = android.content.Intent(context, SignInActivity::class.java)
-                context.startActivity(intent)
+                val user = auth.currentUser
+
+                if (user != null) {
+
+                    // Extrai o identificador único do usuário autenticado (UID) gerado pelo Firebase
+                    val uid = user.uid
+                    Log.i("AUTH", "Conta criada com sucesso. Realize o login!")
+
+                    // Envia o e-mail de verificação (opcional)
+                    user.sendEmailVerification()
+                        .addOnCompleteListener { verifyTask ->
+                            if (verifyTask.isSuccessful) {
+                                Toast.makeText(context, "E-mail de verificação enviado!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Log.w("AUTH", "Falha ao enviar e-mail de verificação.", verifyTask.exception)
+                            }
+                        }
+
+                    // Chama a função que salva no Firestore
+                    savePatientToFirestore(uid, nome, email, context)
+                }
             } else {
-                val erro = task.exception?.message ?: "Erro desconhecido."
-                Toast.makeText(context, "Falha no cadastro: $erro", Toast.LENGTH_SHORT).show()
+                val exception = task.exception
+                if (exception is FirebaseAuthUserCollisionException) {
+                    Toast.makeText(context, "Este e-mail já está em uso. Faça login!", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(context, "Erro ao criar conta: ${exception?.message}", Toast.LENGTH_LONG).show()
+                }
             }
+        }
+}
+
+fun savePatientToFirestore(uid: String, nome: String, email: String, context: Context) {
+    val db = Firebase.firestore
+
+    val dadosPaciente = hashMapOf(
+        "nome" to nome,
+        "email" to email,
+        "tipo" to "Paciente"
+    )
+
+    db.collection("paciente")
+        .document(uid) // usa o UID do Firebase Auth como ID do documento
+        .set(dadosPaciente)
+        .addOnSuccessListener {
+            Toast.makeText(context, "Cadastro salvo com sucesso!", Toast.LENGTH_SHORT).show()
+
+            // Redireciona pra tela de login (ou home, se preferir)
+            val intent = Intent(context, SignInActivity::class.java)
+            context.startActivity(intent)
+        }
+        .addOnFailureListener { e ->
+            Toast.makeText(context, "Erro ao salvar dados: ${e.message}", Toast.LENGTH_SHORT).show()
         }
 }
 
@@ -252,7 +306,7 @@ fun SignUp(modifier: Modifier = Modifier) {
                                 Toast.makeText(context, "As senhas não coincidem.", Toast.LENGTH_SHORT).show()
                             }
                             else -> {
-                                cadastrarUsuario(nome, email, senha, context)
+                                registerPatientAuth(email, senha, nome, context)
                             }
                         }
                     },

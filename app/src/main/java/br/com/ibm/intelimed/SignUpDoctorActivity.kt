@@ -30,6 +30,14 @@ import androidx.compose.ui.unit.sp
 import android.util.Patterns
 import com.google.firebase.auth.FirebaseAuth
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import com.google.firebase.firestore.FirebaseFirestore
+import android.content.Intent
+import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.auth
+import com.google.firebase.firestore.firestore
+
 
 class SignUpDoctorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,23 +48,68 @@ class SignUpDoctorActivity : ComponentActivity() {
     }
 }
 
-/*
-// Função para cadastrar o usuário no Firebase
-fun cadastrarUsuario(nome: String, email: String, senha: String, context: Context) {
-    FirebaseAuth.getInstance()
-        .createUserWithEmailAndPassword(email, senha)
+fun registerDoctorAuth(email: String, password: String, nome: String, crm: String, context: Context) {
+    val auth = Firebase.auth
+
+    auth.createUserWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
-                Toast.makeText(context, "Cadastro realizado com sucesso!", Toast.LENGTH_SHORT).show()
-                val intent = android.content.Intent(context, SignInActivity::class.java)
-                context.startActivity(intent)
+                val user = auth.currentUser
+                val uid = user?.uid
+
+                if (user != null) {
+                    // Extrai o identificador único do usuário autenticado (UID) gerado pelo Firebase
+                    val uid = user.uid
+                    Log.i("AUTH", "Conta criada com sucesso")
+
+                    // Envia o e-mail de verificação (opcional)
+                    user.sendEmailVerification()
+                        .addOnCompleteListener { verifyTask ->
+                            if (verifyTask.isSuccessful) {
+                                Toast.makeText(context, "E-mail de verificação enviado!", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Log.w("AUTH", "Falha ao enviar e-mail de verificação.", verifyTask.exception)
+                            }
+                        }
+
+                    // Chama a função que salva no Firestore
+                    saveDoctorToFirestore(uid, nome, email, crm, context)
+                }
             } else {
-                val erro = task.exception?.message ?: "Erro desconhecido."
-                Toast.makeText(context, "Falha no cadastro: $erro", Toast.LENGTH_SHORT).show()
+                val exception = task.exception
+                if (exception is FirebaseAuthUserCollisionException) {
+                    Toast.makeText(context, "Este e-mail já está em uso. Faça login!", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(context, "Erro ao criar conta: ${exception?.message}", Toast.LENGTH_LONG).show()
+                }
             }
         }
 }
-*/
+
+fun saveDoctorToFirestore(uid: String, nome: String, email: String, crm: String, context: Context) {
+    val db = Firebase.firestore
+
+    val dadosMedico = hashMapOf(
+        "nome" to nome,
+        "email" to email,
+        "crm" to crm,
+        "tipo" to "Médico"
+    )
+
+    db.collection("medico")
+        .document(uid) // usa o UID do Firebase Auth como ID do documento
+        .set(dadosMedico)
+        .addOnSuccessListener {
+            Toast.makeText(context, "Cadastro realizado com sucesso, realize o login!", Toast.LENGTH_SHORT).show()
+
+            // Exemplo: redireciona pra tela de login
+            val intent = Intent(context, SignInActivity::class.java)
+            context.startActivity(intent)
+        }
+        .addOnFailureListener { e ->
+            Toast.makeText(context, "Erro ao salvar dados: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+}
 
 @Composable
 fun SignUpDoctor(modifier: Modifier = Modifier) {
@@ -276,7 +329,7 @@ fun SignUpDoctor(modifier: Modifier = Modifier) {
                                 Toast.makeText(context, "As senhas não coincidem.", Toast.LENGTH_SHORT).show()
                             }
                             else -> {
-                                cadastrarUsuario(nome, email, senha, context)
+                                registerDoctorAuth(email, senha, nome, crm, context)
                             }
                         }
                     },

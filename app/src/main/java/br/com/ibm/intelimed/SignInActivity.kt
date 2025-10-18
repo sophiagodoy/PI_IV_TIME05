@@ -27,6 +27,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class SignInActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,6 +40,57 @@ class SignInActivity : ComponentActivity() {
             SignIn()
         }
     }
+}
+
+fun loginUser(email: String, password: String, context: Context) {
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+
+    auth.signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val user = auth.currentUser
+
+                if (user != null) {
+                    val uid = user.uid
+
+                    // 🔍 Primeiro, tenta achar o usuário na coleção "medico"
+                    db.collection("medico").document(uid).get()
+                        .addOnSuccessListener { medicoDoc ->
+                            if (medicoDoc.exists()) {
+                                Toast.makeText(context, "Bem-vindo, médico!", Toast.LENGTH_SHORT).show()
+                                val intent = Intent(context, MainDoctorActivity::class.java)
+                                context.startActivity(intent)
+                            } else {
+                                // 🔍 Se não for médico, tenta na coleção "paciente"
+                                db.collection("paciente").document(uid).get()
+                                    .addOnSuccessListener { pacienteDoc ->
+                                        if (pacienteDoc.exists()) {
+                                            Toast.makeText(context, "Bem-vindo, paciente!", Toast.LENGTH_SHORT).show()
+                                            val intent = Intent(context, MainPatientActivity::class.java)
+                                            context.startActivity(intent)
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Usuário não encontrado no banco de dados.",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    }
+                            }
+                        }
+                } else {
+                    Toast.makeText(context,
+                        "Por favor, verifique seu e-mail antes de entrar.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    auth.signOut()
+                }
+            } else {
+                val errorMessage = task.exception?.message ?: "Erro desconhecido ao fazer login."
+                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+            }
+        }
 }
 
 @Composable
@@ -166,7 +222,7 @@ fun SignIn(modifier: Modifier = Modifier) {
                         emailError = validateEmail(email)
                         passwordError = validatePassword(password)
                         if (emailError == null && passwordError == null) {
-                            // TODO: Implementar autenticação
+                            loginUser(email, password, context)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(

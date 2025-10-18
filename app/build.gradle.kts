@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    // id("com.google.gms.google-services")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -58,12 +58,26 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // Ícones e Material Design
+    // ============================================
+    // ÍCONES E MATERIAL DESIGN
+    // ============================================
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
     implementation("androidx.compose.material3:material3:1.3.0")
+    implementation("androidx.compose.material:material-icons-extended")
 
-    // Firebase (pode deixar, mesmo sem o plugin ativo)
-    implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+    // ============================================
+    // FIREBASE (BoM + serviços principais)
+    // ============================================
+    // Importa o Firebase BoM (mantém as versões compatíveis automaticamente)
+    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+
+    // Autenticação
     implementation("com.google.firebase:firebase-auth")
+
+    // Firestore (Banco de dados)
+    implementation("com.google.firebase:firebase-firestore")
+
+    // Analytics (monitoramento de uso)
+    implementation("com.google.firebase:firebase-analytics")
 }

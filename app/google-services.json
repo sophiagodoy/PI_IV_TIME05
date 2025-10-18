@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "674969802693",
+    "project_id": "intelimed-a2710",
+    "storage_bucket": "intelimed-a2710.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:674969802693:android:542b8a85d64358ac3e9dac",
+        "android_client_info": {
+          "package_name": "br.com.ibm.intelimed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQEhBe3jTSHCzLaF_frpy6L6rVoDnetJc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
