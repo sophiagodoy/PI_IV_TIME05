@@ -108,6 +108,13 @@
             android:label="Cadastro de Paciente"
             android:theme="@style/Theme.Intelimed" />
 
+        <!-- Tela de relatórios do paciente -->
+        <activity
+            android:name=".ReportsActivity"
+            android:exported="false"
+            android:label="Relatórios"
+            android:theme="@style/Theme.Intelimed" />
+
     </application>
 
 </manifest>
