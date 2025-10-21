@@ -49,7 +49,6 @@ class SignUpPatientActivity : ComponentActivity() {
 }
 
 fun registerPatientAuth(email: String, password: String, nome: String, context: Context) {
-
     val auth = Firebase.auth
 
     auth.createUserWithEmailAndPassword(email, password)
@@ -58,34 +57,59 @@ fun registerPatientAuth(email: String, password: String, nome: String, context: 
                 val user = auth.currentUser
 
                 if (user != null) {
-
-                    // Extrai o identificador único do usuário autenticado (UID) gerado pelo Firebase
                     val uid = user.uid
-                    Log.i("AUTH", "Conta criada com sucesso. Realize o login!")
+                    Log.i("AUTH", "Conta criada com sucesso: UID = $uid")
 
-                    // Envia o e-mail de verificação (opcional)
+                    // Envia o e-mail de verificação
                     user.sendEmailVerification()
                         .addOnCompleteListener { verifyTask ->
                             if (verifyTask.isSuccessful) {
-                                Toast.makeText(context, "E-mail de verificação enviado!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    "E-mail de verificação enviado para ${user.email}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                Log.i("AUTH", "E-mail de verificação enviado com sucesso.")
                             } else {
-                                Log.w("AUTH", "Falha ao enviar e-mail de verificação.", verifyTask.exception)
+                                Log.w(
+                                    "AUTH",
+                                    "Falha ao enviar e-mail de verificação.",
+                                    verifyTask.exception
+                                )
+                                Toast.makeText(
+                                    context,
+                                    "Erro ao enviar e-mail de verificação.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         }
 
-                    // Chama a função que salva no Firestore
+                    // Salva os dados do paciente no Firestore
                     savePatientToFirestore(uid, nome, email, context)
                 }
             } else {
                 val exception = task.exception
-                if (exception is FirebaseAuthUserCollisionException) {
-                    Toast.makeText(context, "Este e-mail já está em uso. Faça login!", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(context, "Erro ao criar conta: ${exception?.message}", Toast.LENGTH_LONG).show()
+                when (exception) {
+                    is FirebaseAuthUserCollisionException -> {
+                        Toast.makeText(
+                            context,
+                            "Este e-mail já está em uso. Faça login!",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    else -> {
+                        Toast.makeText(
+                            context,
+                            "Erro ao criar conta: ${exception?.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        Log.e("AUTH", "Erro ao criar conta", exception)
+                    }
                 }
             }
         }
 }
+
 
 fun savePatientToFirestore(uid: String, nome: String, email: String, context: Context) {
     val db = Firebase.firestore

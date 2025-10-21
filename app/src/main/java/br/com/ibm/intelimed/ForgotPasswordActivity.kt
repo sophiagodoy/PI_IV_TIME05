@@ -22,6 +22,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import android.widget.Toast
+import com.google.firebase.auth.FirebaseAuth
+
 
 class ForgotPasswordActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -128,7 +131,7 @@ fun ForgotPassword() {
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
-                    onClick = { /* TODO: Implementar envio do link de redefinição */ },
+                    onClick = { sendPasswordResetEmail(email.text, context) },
                     colors = ButtonDefaults.buttonColors(containerColor = teal),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
@@ -160,6 +163,28 @@ fun ForgotPassword() {
     }
 }
 
+fun sendPasswordResetEmail(email: String, context: android.content.Context) {
+    if (email.isEmpty()) {
+        Toast.makeText(context, "Por favor, insira um e-mail válido.", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val auth = FirebaseAuth.getInstance()
+    auth.sendPasswordResetEmail(email)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Toast.makeText(
+                    context,
+                    "Um link de redefinição foi enviado para $email",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                val errorMessage = task.exception?.message ?: "Erro ao enviar e-mail."
+                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+            }
+        }
+}
+
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ForgotPasswordPreview() {
@@ -167,3 +192,4 @@ fun ForgotPasswordPreview() {
         ForgotPassword()
     }
 }
+

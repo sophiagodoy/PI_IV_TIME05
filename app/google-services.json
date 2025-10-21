@@ -12,7 +12,16 @@
           "package_name": "br.com.ibm.intelimed"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "674969802693-tou041jpiraaamtjh12c0vh9343ptea8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "br.com.ibm.intelimed",
+            "certificate_hash": "8f38a39beb39f2c6495347f449a0cbb61986a200"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBQEhBe3jTSHCzLaF_frpy6L6rVoDnetJc"
