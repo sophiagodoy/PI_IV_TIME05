@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import android.widget.Toast
 
 class TermsOfUseActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -113,7 +114,12 @@ fun TermsOfUse(modifier: Modifier = Modifier) {
             // Botão "Continuar"
             Button(
                 onClick = {
-                    // TODO: IMPLEMENTAR AÇÃO DE CONTINUAÇÃO
+                    if (aceitoTermos) {
+                        Toast.makeText(context, "Termos aceitos com sucesso!", Toast.LENGTH_SHORT).show()
+                        // TODO: IMPLEMENTAR AÇÃO DE CONTINUAÇÃO
+                    } else {
+                        Toast.makeText(context, "É necessário aceitar os termos para continuar", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 enabled = aceitoTermos,
                 colors = ButtonDefaults.buttonColors(
