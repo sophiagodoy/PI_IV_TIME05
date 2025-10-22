@@ -16,6 +16,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 
 class GenerateForwardingActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +41,7 @@ fun GenerateForwardingScreen(
     onCancel: () -> Unit,
     onGenerate: () -> Unit,
 ) {
+    val context = LocalContext.current
     var patientName by remember { mutableStateOf("") }
     var patientId by remember { mutableStateOf("") }
 
@@ -63,7 +66,13 @@ fun GenerateForwardingScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f)) { Text("Cancelar") }
-                Button(onClick = onGenerate, modifier = Modifier.weight(2f)) { Text("Gerar encaminhamento") }
+                Button(onClick = {
+                    if (patientName.isBlank() || patientId.isBlank()) {
+                        Toast.makeText(context, "Preencha todos os campos obrigatórios", Toast.LENGTH_SHORT).show()
+                    } else {
+                        onGenerate()
+                    }
+                }, modifier = Modifier.weight(2f)) { Text("Gerar encaminhamento") }
             }
         }
     ) { inner ->
@@ -147,7 +156,9 @@ fun GenerateForwardingScreen(
             )
 
             OutlinedCard(
-                Modifier.fillMaxWidth().clickable { attachName = "exame_hemograma.pdf" }
+                Modifier.fillMaxWidth().clickable {
+                    attachName = "exame_hemograma.pdf"
+                }
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text("Anexos (opcional)", style = MaterialTheme.typography.titleMedium)
