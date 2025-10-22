@@ -20,6 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 
 // Paleta de cores utilizada na tela, mantendo o padrão do app
 private val Teal = Color(0xFF007C7A)
@@ -47,6 +49,8 @@ class ReportsActivity : ComponentActivity() {
 
 @Composable
 fun ReportsScreen() {
+    val context = LocalContext.current
+
     // Lista observável de relatórios exibidos na tela
     val reports = remember { mutableStateListOf<Report>() }
 
@@ -205,7 +209,7 @@ fun ReportCard(report: Report) {
             .fillMaxWidth()
             .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp))
             .clickable {
-                // Clique futuro pode abrir uma tela de detalhes do relatório
+                // TODO: abrir tela de detalhes do relatório
             }
     ) {
         Column(
