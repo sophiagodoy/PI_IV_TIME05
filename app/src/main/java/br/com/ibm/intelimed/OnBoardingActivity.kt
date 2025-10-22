@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 
 /**
  * Activity principal responsável pela tela de Onboarding.
@@ -51,6 +53,8 @@ private val LightTeal = Color(0xFFB5D8D8)
  */
 @Composable
 fun OnBoardingScreen() {
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -113,7 +117,10 @@ fun OnBoardingScreen() {
             ) {
                 // Botão "Pular"
                 OutlinedButton(
-                    onClick = { /* TODO: ação Pular */ },
+                    onClick = {
+                        Toast.makeText(context, "Pulando onboarding", Toast.LENGTH_SHORT).show()
+                        // TODO: ação Pular
+                    },
                     shape = RoundedCornerShape(50),
                     border = BorderStroke(1.5.dp, Teal),
                     modifier = Modifier
@@ -127,7 +134,10 @@ fun OnBoardingScreen() {
 
                 // Botão "Próximo"
                 Button(
-                    onClick = { /* TODO: ação Próximo */ },
+                    onClick = {
+                        Toast.makeText(context, "Avançando para próximo passo", Toast.LENGTH_SHORT).show()
+                        // TODO: ação Próximo
+                    },
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(containerColor = Teal),
                     modifier = Modifier

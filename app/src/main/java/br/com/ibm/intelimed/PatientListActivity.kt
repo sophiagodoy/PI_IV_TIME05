@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 
 class PatientListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +67,7 @@ fun getPatients(onResult: (List<Paciente>) -> Unit) {
 
 @Composable
 fun PatientList() {
+    val context = LocalContext.current
     var pacientes by remember { mutableStateOf<List<Paciente>>(emptyList()) }
     var carregando by remember { mutableStateOf(true) }
 
@@ -73,6 +76,11 @@ fun PatientList() {
         getPatients { lista ->
             pacientes = lista
             carregando = false
+            if (lista.isEmpty()) {
+                Toast.makeText(context, "Nenhum paciente encontrado", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "${lista.size} paciente(s) carregado(s)", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -131,7 +139,9 @@ fun PacienteCardModern(paciente: Paciente) {
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF7FDFC)),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /* TODO: MUDAR PARA A TELA QUE APARECE OS SINTOMAS DO PACIENTE */ }
+            .clickable {
+                // TODO: MUDAR PARA A TELA QUE APARECE OS SINTOMAS DO PACIENTE
+            }
             .padding(horizontal = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

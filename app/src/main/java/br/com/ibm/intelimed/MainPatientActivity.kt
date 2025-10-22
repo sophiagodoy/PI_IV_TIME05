@@ -19,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import android.widget.Toast
 
 class MainPatientActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +48,9 @@ fun PatientHome() {
                 title = { Text("INTELIMED", color = Color.White, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = teal),
                 actions = {
-                    IconButton(onClick = { /* Notificações */ }) {
+                    IconButton(onClick = {
+                        Toast.makeText(context, "Nenhuma notificação nova", Toast.LENGTH_SHORT).show()
+                    }) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notificações", tint = Color.White)
                     }
                 }
@@ -97,7 +100,9 @@ fun PatientHome() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OptionCard("Chat", Icons.Default.Chat) { /* abrir chat */ }
+                OptionCard("Chat", Icons.Default.Chat) {
+                    Toast.makeText(context, "Funcionalidade em desenvolvimento", Toast.LENGTH_SHORT).show()
+                }
                 OptionCard("Escolher Médico", Icons.Default.Description) {
                     val intent = Intent(context, SymptomLogActivity::class.java)
                     context.startActivity(intent)
@@ -112,13 +117,17 @@ fun PatientHome() {
                     val intent = Intent(context, MedicalGuidanceActivity::class.java)
                     context.startActivity(intent)
                 }
-                OptionCard("Feedback Médico", Icons.Default.Warning) { /* abrir feedback */ }
+                OptionCard("Feedback Médico", Icons.Default.Warning) {
+                    Toast.makeText(context, "Funcionalidade em desenvolvimento", Toast.LENGTH_SHORT).show()
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = { /* registrar sintomas */ },
+                onClick = {
+                    Toast.makeText(context, "Funcionalidade em desenvolvimento", Toast.LENGTH_SHORT).show()
+                },
                 colors = ButtonDefaults.buttonColors(containerColor = teal),
                 modifier = Modifier
                     .fillMaxWidth()

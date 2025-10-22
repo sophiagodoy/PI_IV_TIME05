@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
 import com.google.firebase.auth.FirebaseAuth
+import android.widget.Toast
 
 class MainDoctorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +46,9 @@ fun DoctorHome() {
                 title = { Text("INTELIMED", color = Color.White, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = teal),
                 actions = {
-                    IconButton(onClick = { /* Notificações */ }) {
+                    IconButton(onClick = {
+                        Toast.makeText(context, "Nenhuma notificação nova", Toast.LENGTH_SHORT).show()
+                    }) {
                         Icon(
                             Icons.Default.Notifications,
                             contentDescription = null,
@@ -101,15 +104,21 @@ fun DoctorHome() {
                     val intent = Intent(context, PatientListActivity::class.java)
                     context.startActivity(intent)
                 }
-                OptionCard("Chat", Icons.Default.Chat) { /* abrir chat */ }
+                OptionCard("Chat", Icons.Default.Chat) {
+                    Toast.makeText(context, "Funcionalidade em desenvolvimento", Toast.LENGTH_SHORT).show()
+                }
             }
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OptionCard("Feedbacks", Icons.Default.ThumbUp) { /* abrir feedbacks */ }
-                OptionCard("Encaminhamentos", Icons.Default.ArrowForward) { /* abrir encaminhamentos */ }
+                OptionCard("Feedbacks", Icons.Default.ThumbUp) {
+                    Toast.makeText(context, "Funcionalidade em desenvolvimento", Toast.LENGTH_SHORT).show()
+                }
+                OptionCard("Encaminhamentos", Icons.Default.ArrowForward) {
+                    Toast.makeText(context, "Funcionalidade em desenvolvimento", Toast.LENGTH_SHORT).show()
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

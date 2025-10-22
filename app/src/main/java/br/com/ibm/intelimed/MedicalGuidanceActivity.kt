@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import android.widget.Toast
 
 class MedicalGuidanceActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,7 +54,6 @@ fun OrientacoesMedicas() {
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                        // Volta para a página principal
                             val intent = Intent(context, MainPatientActivity::class.java)
                             context.startActivity(intent)
                     }) {
