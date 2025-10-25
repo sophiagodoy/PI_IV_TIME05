@@ -22,6 +22,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainPatientActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,12 +36,44 @@ class MainPatientActivity : ComponentActivity() {
     }
 }
 
+fun buscarNomeUsuario(onResult: (String) -> Unit) {
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+    val currentUser = auth.currentUser ?: return
+    val uid = currentUser.uid
+
+    db.collection("paciente").document(uid).get()
+        .addOnSuccessListener { doc ->
+            if (doc.exists()) {
+                val nome = doc.getString("nome") ?: "Paciente"
+                onResult(nome.split(" ").firstOrNull() ?: nome)
+            } else {
+                db.collection("medico").document(uid).get()
+                    .addOnSuccessListener { medicoDoc ->
+                        val nome = medicoDoc.getString("nome") ?: "Médico"
+                        onResult(nome.split(" ").firstOrNull() ?: nome)
+                    }
+                    .addOnFailureListener { onResult("Usuário") }
+            }
+        }
+        .addOnFailureListener {
+            onResult("Usuário")
+        }
+}
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PatientHome() {
     val teal = Color(0xFF007C7A)
     val cardBg = Color(0xFFF7FDFC)
     val context = LocalContext.current
+    var nome by remember { mutableStateOf("Usuário") }
+    LaunchedEffect(Unit) {
+        buscarNomeUsuario { resultado ->
+            nome = resultado
+        }
+    }
 
     // Estado do diálogo de confirmação de saída
     var mostrarDialogoSair by remember { mutableStateOf(false) }
@@ -90,7 +124,7 @@ fun PatientHome() {
                 color = Color.Black
             )
             Text(
-                text = "Olá, Arthur",
+                text = "Olá, $nome",
                 fontSize = 18.sp,
                 color = Color.DarkGray
             )

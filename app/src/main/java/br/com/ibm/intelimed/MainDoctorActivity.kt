@@ -41,6 +41,12 @@ fun DoctorHome() {
     val teal = Color(0xFF007C7A)
     val context = LocalContext.current
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var nome by remember { mutableStateOf("Usuário") }
+    LaunchedEffect(Unit) {
+        buscarNomeUsuario { resultado ->
+            nome = resultado
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -90,7 +96,7 @@ fun DoctorHome() {
                 color = Color.Black
             )
             Text(
-                text = "Olá, Dr. Arthur", // pode ser dinâmico depois
+                text = "Olá, Dr. $nome",
                 fontSize = 18.sp,
                 color = Color.DarkGray
             )
