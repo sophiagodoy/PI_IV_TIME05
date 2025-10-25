@@ -117,7 +117,8 @@ fun savePatientToFirestore(uid: String, nome: String, email: String, context: Co
     val dadosPaciente = hashMapOf(
         "nome" to nome,
         "email" to email,
-        "tipo" to "Paciente"
+        "tipo" to "Paciente",
+        "primeiroLogin" to true
     )
 
     db.collection("paciente")

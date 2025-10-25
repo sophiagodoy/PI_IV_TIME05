@@ -2,6 +2,7 @@ package br.com.ibm.intelimed
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -113,7 +114,9 @@ fun TermsOfUse(modifier: Modifier = Modifier) {
             // Botão "Continuar"
             Button(
                 onClick = {
-                    // TODO: IMPLEMENTAR AÇÃO DE CONTINUAÇÃO
+                    Toast.makeText(context, "Bem-vindo", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(context, MainPatientActivity::class.java)
+                    context.startActivity(intent)
                 },
                 enabled = aceitoTermos,
                 colors = ButtonDefaults.buttonColors(
@@ -147,7 +150,7 @@ fun TermsOfUse(modifier: Modifier = Modifier) {
 
 @Preview
 @Composable
-fun TermsAndPrivacyPreview() {
+fun TermsOfUsePreview() {
     IntelimedTheme {
         TermsOfUse()
     }

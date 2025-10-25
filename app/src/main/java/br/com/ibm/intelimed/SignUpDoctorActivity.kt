@@ -91,7 +91,8 @@ fun saveDoctorToFirestore(uid: String, nome: String, email: String, crm: String,
         "email" to email,
         "crm" to crm,
         "especialidade" to especialidade,
-        "tipo" to "Médico"
+        "tipo" to "Médico",
+        "primeiroLogin" to true
     )
 
     db.collection("medico")

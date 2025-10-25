@@ -58,17 +58,37 @@ fun loginUser(email: String, password: String, context: Context) {
                     db.collection("medico").document(uid).get()
                         .addOnSuccessListener { medicoDoc ->
                             if (medicoDoc.exists()) {
-                                Toast.makeText(context, "Bem-vindo, médico!", Toast.LENGTH_SHORT).show()
-                                val intent = Intent(context, MainDoctorActivity::class.java)
-                                context.startActivity(intent)
+                                val isFirstLogin = medicoDoc.getBoolean("primeiroLogin") ?: false;
+                                if (isFirstLogin) {
+                                    Toast.makeText(context, "Bem-vindo ao seu primeiro acesso!", Toast.LENGTH_LONG).show();
+                                    val intent = Intent(context, TermsOfUseActivity::class.java)
+                                    context.startActivity(intent)
+                                    db.collection("medico").document(uid)
+                                        .update("primeiroLogin", false)
+                                } else {
+                                    Toast.makeText(context, "Bem-vindo, médico!", Toast.LENGTH_SHORT).show()
+                                    val intent = Intent(context, MainDoctorActivity::class.java)
+                                    context.startActivity(intent)
+                                }
+
                             } else {
                                 // 🔍 Se não for médico, tenta na coleção "paciente"
                                 db.collection("paciente").document(uid).get()
                                     .addOnSuccessListener { pacienteDoc ->
                                         if (pacienteDoc.exists()) {
-                                            Toast.makeText(context, "Bem-vindo, paciente!", Toast.LENGTH_SHORT).show()
-                                            val intent = Intent(context, MainPatientActivity::class.java)
-                                            context.startActivity(intent)
+                                            val isFirstLogin = pacienteDoc.getBoolean("primeiroLogin") ?: false;
+                                            if (isFirstLogin) {
+                                                Toast.makeText(context, "Bem-vindo ao seu primeiro acesso!", Toast.LENGTH_LONG).show();
+                                                val intent = Intent(context, TermsOfUseActivity::class.java)
+                                                context.startActivity(intent)
+                                                db.collection("paciente").document(uid)
+                                                    .update("primeiroLogin", false)
+                                            } else {
+                                                Toast.makeText(context, "Bem-vindo, paciente!", Toast.LENGTH_SHORT).show()
+                                                val intent = Intent(context, MainPatientActivity::class.java)
+                                                context.startActivity(intent)
+                                            }
+
                                         } else {
                                             Toast.makeText(
                                                 context,

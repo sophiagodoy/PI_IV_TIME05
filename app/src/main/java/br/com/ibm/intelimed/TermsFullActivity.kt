@@ -2,6 +2,7 @@ package br.com.ibm.intelimed
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
@@ -112,7 +114,9 @@ fun TermsFullScreen() {
 
             Button(
                 onClick = {
-                    // TODO: IMPLEMENTAR AÇÃO DE CONTINUAÇÃO
+                    Toast.makeText(context, "Bem-vindo", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(context, MainPatientActivity::class.java)
+                    context.startActivity(intent)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF2FA49F),
@@ -126,5 +130,13 @@ fun TermsFullScreen() {
                 Text("Aceitar e Continuar", fontSize = 18.sp)
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun TermsFullPreview() {
+    IntelimedTheme {
+        TermsFullScreen()
     }
 }
