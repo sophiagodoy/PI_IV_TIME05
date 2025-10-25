@@ -7,6 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -66,7 +69,7 @@ fun DoctorHome() {
                 NavigationBarItem(
                     selected = false,
                     onClick = { showLogoutDialog = true },
-                    icon = { Icon(Icons.Default.Logout, contentDescription = null) },
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null) },
                     label = { Text("Sair") }
                 )
             }
@@ -101,7 +104,10 @@ fun DoctorHome() {
                     val intent = Intent(context, PatientListActivity::class.java)
                     context.startActivity(intent)
                 }
-                OptionCard("Chat", Icons.Default.Chat) { /* abrir chat */ }
+                OptionCard("Chat", Icons.AutoMirrored.Filled.Chat) {
+                    val intent = Intent(context, ChatActivity::class.java)
+                    context.startActivity(intent)
+                }
             }
 
             Row(
@@ -109,7 +115,7 @@ fun DoctorHome() {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OptionCard("Feedbacks", Icons.Default.ThumbUp) { /* abrir feedbacks */ }
-                OptionCard("Encaminhamentos", Icons.Default.ArrowForward) { /* abrir encaminhamentos */ }
+                OptionCard("Encaminhamentos", Icons.AutoMirrored.Filled.ArrowForward) { /* abrir encaminhamentos */ }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

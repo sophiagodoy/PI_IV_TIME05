@@ -7,6 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -66,7 +69,7 @@ fun PatientHome() {
                 NavigationBarItem(
                     selected = false,
                     onClick = { mostrarDialogoSair = true },
-                    icon = { Icon(Icons.Default.Logout, contentDescription = "Sair") },
+                    icon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Sair") },
                     label = { Text("Sair") }
                 )
             }
@@ -97,7 +100,10 @@ fun PatientHome() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OptionCard("Chat", Icons.Default.Chat) { /* abrir chat */ }
+                OptionCard("Chat", Icons.AutoMirrored.Filled.Chat) {
+                    val intent = Intent(context, ChatActivity::class.java)
+                    context.startActivity(intent)
+                }
                 OptionCard("Escolher Médico", Icons.Default.Description) {
                     val intent = Intent(context, SymptomLogActivity::class.java)
                     context.startActivity(intent)
@@ -108,7 +114,7 @@ fun PatientHome() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                OptionCard("Orientação Fixa", Icons.Default.ArrowForward) {
+                OptionCard("Orientação Fixa", Icons.AutoMirrored.Filled.ArrowForward) {
                     val intent = Intent(context, MedicalGuidanceActivity::class.java)
                     context.startActivity(intent)
                 }
