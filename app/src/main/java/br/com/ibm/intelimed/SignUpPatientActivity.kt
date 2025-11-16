@@ -33,6 +33,7 @@ import com.google.firebase.auth.FirebaseAuth
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
 import android.content.Intent
 import android.util.Log
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.auth
@@ -171,7 +172,7 @@ fun SignUp(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Filled.ArrowBack,
+                imageVector = Icons.Filled.ArrowBackIosNew,
                 contentDescription = "Voltar",
                 tint = Color.White
             )
@@ -317,9 +318,13 @@ fun SignUp(modifier: Modifier = Modifier) {
                 // Botão Cadastrar
                 Button(
                     onClick = {
+                        val nomePartes = nome.trim().split("\\s+".toRegex())
                         when {
                             nome.isBlank() -> {
                                 Toast.makeText(context, "Por favor, insira seu nome.", Toast.LENGTH_SHORT).show()
+                            }
+                            nomePartes.size < 2 -> {
+                                Toast.makeText(context, "Por favor, insira nome e sobrenome.", Toast.LENGTH_SHORT).show()
                             }
                             !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                                 Toast.makeText(context, "E-mail inválido.", Toast.LENGTH_SHORT).show()
