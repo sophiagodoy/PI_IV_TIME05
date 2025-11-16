@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -30,6 +29,7 @@ import br.com.ibm.intelimed.ui.theme.IntelimedTheme
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -46,6 +46,35 @@ fun loginUser(email: String, password: String, context: Context) {
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
 
+    // Verifica se o e-mail existe no Firestore antes de logar
+    db.collection("medico").whereEqualTo("email", email).get()
+        .addOnSuccessListener { medicoResult ->
+
+            if (!medicoResult.isEmpty) {
+                // Encontrou no MEDICO tenta login
+                autenticate(email, password, context)
+                return@addOnSuccessListener
+            }
+
+            // Se não é médico, tenta paciente
+            db.collection("paciente").whereEqualTo("email", email).get()
+                .addOnSuccessListener { pacienteResult ->
+                    if (!pacienteResult.isEmpty) {
+                        // Encontrou no PACIENTE tenta login
+                        autenticate(email, password, context)
+                    } else {
+                        // Se não encontrou em nenhuma
+                        Toast.makeText(context, "E-mail não encontrado. Verifique o email informado ou faça o cadastro no app.", Toast.LENGTH_LONG).show()
+                    }
+                }
+        }
+}
+
+//Em tese essa fun abaixo substitui a loginUser, que agora verifica o email para repssar pra essa
+fun autenticate(email: String, password: String, context: Context) {
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+
     auth.signInWithEmailAndPassword(email, password)
         .addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -54,61 +83,64 @@ fun loginUser(email: String, password: String, context: Context) {
                 if (user != null) {
                     val uid = user.uid
 
-                    // 🔍 Primeiro, tenta achar o usuário na coleção "medico"
+                    // 🔍 Primeiro vê se é médico
                     db.collection("medico").document(uid).get()
                         .addOnSuccessListener { medicoDoc ->
                             if (medicoDoc.exists()) {
-                                val isFirstLogin = medicoDoc.getBoolean("primeiroLogin") ?: false;
-                                if (isFirstLogin) {
-                                    Toast.makeText(context, "Bem-vindo ao seu primeiro acesso!", Toast.LENGTH_LONG).show();
-                                    val intent = Intent(context, TermsOfUseActivity::class.java)
-                                    context.startActivity(intent)
-                                    db.collection("medico").document(uid)
-                                        .update("primeiroLogin", false)
+
+                                val isFirst = medicoDoc.getBoolean("primeiroLogin") ?: false
+                                if (isFirst) {
+                                    Toast.makeText(context, "Bem-vindo ao seu primeiro acesso!", Toast.LENGTH_LONG).show()
+                                    context.startActivity(Intent(context, TermsOfUseActivity::class.java))
+                                    db.collection("medico").document(uid).update("primeiroLogin", false)
                                 } else {
                                     Toast.makeText(context, "Bem-vindo, médico!", Toast.LENGTH_SHORT).show()
-                                    val intent = Intent(context, MainDoctorActivity::class.java)
-                                    context.startActivity(intent)
+                                    context.startActivity(Intent(context, MainDoctorActivity::class.java))
                                 }
 
                             } else {
-                                // 🔍 Se não for médico, tenta na coleção "paciente"
+                                // 🔍 Se não é médico → paciente
                                 db.collection("paciente").document(uid).get()
                                     .addOnSuccessListener { pacienteDoc ->
                                         if (pacienteDoc.exists()) {
-                                            val isFirstLogin = pacienteDoc.getBoolean("primeiroLogin") ?: false;
-                                            if (isFirstLogin) {
-                                                Toast.makeText(context, "Bem-vindo ao seu primeiro acesso!", Toast.LENGTH_LONG).show();
-                                                val intent = Intent(context, TermsOfUseActivity::class.java)
-                                                context.startActivity(intent)
-                                                db.collection("paciente").document(uid)
-                                                    .update("primeiroLogin", false)
+
+                                            val isFirst = pacienteDoc.getBoolean("primeiroLogin") ?: false
+                                            if (isFirst) {
+                                                Toast.makeText(context, "Bem-vindo ao seu primeiro acesso!", Toast.LENGTH_LONG).show()
+                                                context.startActivity(Intent(context, TermsOfUseActivity::class.java))
+                                                db.collection("paciente").document(uid).update("primeiroLogin", false)
                                             } else {
                                                 Toast.makeText(context, "Bem-vindo, paciente!", Toast.LENGTH_SHORT).show()
-                                                val intent = Intent(context, MainPatientActivity::class.java)
-                                                context.startActivity(intent)
+                                                context.startActivity(Intent(context, MainPatientActivity::class.java))
                                             }
 
                                         } else {
-                                            Toast.makeText(
-                                                context,
-                                                "Usuário não encontrado no banco de dados.",
-                                                Toast.LENGTH_LONG
-                                            ).show()
+                                            Toast.makeText(context, "Usuário não encontrado no banco de dados.", Toast.LENGTH_LONG).show()
                                         }
                                     }
                             }
                         }
                 } else {
-                    Toast.makeText(context,
-                        "Por favor, verifique seu e-mail antes de entrar.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(context, "Por favor, verifique seu e-mail antes de entrar.", Toast.LENGTH_LONG).show()
                     auth.signOut()
                 }
+
             } else {
-                val errorMessage = task.exception?.message ?: "Erro desconhecido ao fazer login."
-                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+
+                val exception = task.exception
+
+                val errorMessage = when (exception) {
+                    is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ->
+                        "Senha incorreta. Tente novamente."
+
+                    is com.google.firebase.auth.FirebaseAuthInvalidUserException ->
+                        "E-mail não encontrado. Verifique o email informado ou faça o cadastro no app."
+
+                    else ->
+                        exception?.message ?: "Erro desconhecido ao fazer login."
+                }
+
+                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
             }
         }
 }
@@ -160,7 +192,7 @@ fun SignIn(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Filled.ArrowBack,
+                imageVector = Icons.Filled.ArrowBackIosNew,
                 contentDescription = "Voltar",
                 tint = Color.White
             )
