@@ -127,5 +127,13 @@
             android:exported="false"
             android:label="Chat"
             android:theme="@style/Theme.Intelimed" />
+
+        <!-- Selecionar Médico -->
+        <activity
+            android:name=".SelectDoctorActivity"
+            android:exported="false"
+            android:label="Select Doctor"
+            android:theme="@style/Theme.Intelimed" />
+
     </application>
 </manifest>

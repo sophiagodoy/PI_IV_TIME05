@@ -139,7 +139,7 @@ fun PatientHome() {
                     context.startActivity(intent)
                 }
                 OptionCard("Escolher Médico", Icons.Default.Description) {
-                    val intent = Intent(context, SymptomLogActivity::class.java)
+                    val intent = Intent(context, SelectDoctorActivity::class.java)
                     context.startActivity(intent)
                 }
             }
