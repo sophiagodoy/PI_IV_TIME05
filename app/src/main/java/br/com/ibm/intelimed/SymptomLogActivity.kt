@@ -114,27 +114,47 @@ fun savePatientSymptoms(
 
 // Função que busca as especialidades dos médicos no Firestore
 fun getEspecialidades(
-    onSucesso: (List<String>) -> Unit,
-    onErro: (Exception) -> Unit
+    onSucesso: (List<String>) -> Unit,   // Função que será chamada quando tudo der certo
+    onErro: (Exception) -> Unit          // Função que será chamada caso dê erro
 ) {
-    val db = Firebase.firestore
+    val db = Firebase.firestore          // Obtém a instância do Firestore
 
-    db.collection("medico")
-        .get()
-        .addOnSuccessListener { task ->
-            val lista = mutableListOf<String>()
+    db.collection("medico")              // Acessa a coleção "medico"
+        .get()                           // Busca todos os documentos dessa coleção
+        .addOnSuccessListener { task ->  // Quando a busca for bem-sucedida…
 
-            for (documento in task) {
-                val esp = documento.getString("especialidade")
-                if (!esp.isNullOrEmpty()) lista.add(esp)
+            val lista = mutableListOf<String>()  // Lista onde vamos colocar TODAS especialidades encontradas
+
+            for (documento in task) {    // Para cada documento retornado…
+
+                // Pega o campo "especialidade" — pode ser String OU Array
+                val espCampo = documento.get("especialidade")
+
+                // Converte o campo para uma lista de Strings independente do tipo
+                val espList = when (espCampo) {
+
+                    is String ->          // Caso o campo seja UMA STRING apenas
+                        listOf(espCampo)  // transforma em lista com 1 item
+
+                    is List<*> ->         // Caso seja uma lista/array
+                        espCampo.map { it.toString() }  // converte cada item para String
+
+                    else ->               // Caso seja nulo ou tipo inesperado
+                        emptyList()       // retorna lista vazia
+                }
+
+                // Adiciona todas as especialidades desse médico à lista geral
+                lista.addAll(espList)
             }
 
-            onSucesso(lista.distinct()) // remove duplicadas
+            // Remove duplicatas e retorna para quem chamou a função
+            onSucesso(lista.distinct())
         }
-        .addOnFailureListener { erro ->
-            onErro(erro)
+        .addOnFailureListener { erro ->   // Se ocorrer erro na leitura do Firestore…
+            onErro(erro)                  // passa o erro para quem chamou a função
         }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -499,7 +519,7 @@ fun PerguntaSimNao(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun RegistroSintomasPreview() {
     IntelimedTheme {
