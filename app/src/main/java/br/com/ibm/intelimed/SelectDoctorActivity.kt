@@ -39,6 +39,10 @@ class SelectDoctorActivity : ComponentActivity() {
 @Composable
 fun SelectDoctorScreen(onBack: (() -> Unit)? = null) {
 
+    var showDialog by remember { mutableStateOf(false) }
+    var medicoSelecionado by remember { mutableStateOf<Medico?>(null) }
+
+
     val teal = Color(0xFF007C7A)
     val lightBg = Color(0xFFF7FDFC)
     val softGray = Color(0xFF6D6D6D)
@@ -276,7 +280,8 @@ fun SelectDoctorScreen(onBack: (() -> Unit)? = null) {
 
                             // BOTÃO
                             Button(
-                                onClick = { /* ação */ },
+                                onClick = {medicoSelecionado = medico
+                                    showDialog = true },
                                 colors = ButtonDefaults.buttonColors(containerColor = teal),
                                 shape = RoundedCornerShape(10.dp)
                             ) {
@@ -286,6 +291,49 @@ fun SelectDoctorScreen(onBack: (() -> Unit)? = null) {
                     }
                 }
             }
+        }
+        // Exibe o popup SOMENTE se showDialog = true e se existe um médico selecionado
+        if (showDialog && medicoSelecionado != null) {
+            AlertDialog(
+                // Quando clicar fora ou no botão OK → fecha o popup
+                onDismissRequest = { showDialog = false },
+                // Deixa o popup com bordas arredondadas bonitinhas
+                shape = RoundedCornerShape(20.dp),
+                // Cor de fundo branca (fica igual ao padrão do app)
+                containerColor = Color.White,
+                // Sombra suave para deixar o popup flutuando (efeito elegante)
+                tonalElevation = 6.dp,
+
+                // TÍTULO do popup
+                title = {
+                    Text(
+                        "Solicitação enviada!",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = teal
+                    )
+                },
+
+                // TEXTO explicando sobre a confirmação do médico
+                text = {
+                    Text(
+                        "Aguarde a confirmação do médico ${medicoSelecionado!!.nome}.",
+                        fontSize = 16.sp,
+                        color = Color.DarkGray
+                    )
+                },
+
+                // BOTÃO de confirmação (apenas "OK")
+                confirmButton = {
+                    Button(
+                        onClick = { showDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = teal),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("OK", color = Color.White)
+                    }
+                }
+            )
         }
     }
 }
