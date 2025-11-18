@@ -100,47 +100,7 @@ fun saveDoctorToFirestore(
         }
 }
 
-/*
-// VALIDAÇÕES
-fun nomeValido(nome: String): Boolean {
-    val partes = nome.trim().split("\\s+".toRegex()).filter { it.isNotEmpty() }
-    return partes.size >= 2 && partes.all { it.length >= 2 }
-}
-
-fun crmValido(crm: String): Boolean {
-    val regex = Regex("^\\d{4,6}-[A-Z]{2}\$")
-    return regex.matches(crm.trim().uppercase())
-}
-
-fun formatarCrmEntrada(raw: String): String {
-    val cleaned = raw.filter { it.isLetterOrDigit() }
-    val digits = cleaned.takeWhile { it.isDigit() }
-    val letters = cleaned.drop(digits.length)
-    val d = digits.take(6)
-    val uf = letters.filter { it.isLetter() }.take(2).uppercase()
-    return if (uf.isNotEmpty()) "$d-$uf" else d
-}
-
-fun senhaForte(s: String): Boolean {
-    val regex = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{8,}\$")
-    return regex.matches(s)
-}
-
-fun mensagemForcaSenha(senha: String): String {
-    if (senha.isEmpty()) return ""
-    val checks = listOf(
-        "8+" to (senha.length >= 8),
-        "Maiúscula" to senha.any { it.isUpperCase() },
-        "Minúscula" to senha.any { it.isLowerCase() },
-        "Número" to senha.any { it.isDigit() },
-        "Especial" to senha.any { !it.isLetterOrDigit() }
-    )
-    val faltando = checks.filter { !it.second }.map { it.first }
-    return if (faltando.isEmpty()) "Senha forte" else "Faltando: " + faltando.joinToString(", ")
-}
-*/
-
-// LISTA DE ESPECIALIDADES
+/** Lista de Especialidades */
 val ESPECIALIDADES = listOf(
     "Cardiologia",
     "Dermatologia",
@@ -158,6 +118,24 @@ val ESPECIALIDADES = listOf(
     "Reumatologia",
     "Outras"
 )
+
+/** Verifica se já existe esse CRM no banco */
+fun checkCRMExists(
+    crm: String,
+    callback: (Boolean) -> Unit
+) {
+    val db = Firebase.firestore
+
+    db.collection("medico")
+        .whereEqualTo("crm", crm)
+        .get()
+        .addOnSuccessListener { result ->
+            callback(!result.isEmpty) // TRUE = já existe
+        }
+        .addOnFailureListener {
+            callback(false)
+        }
+}
 
 class SignUpDoctorActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -228,7 +206,8 @@ fun SignUpDoctor() {
             OutlinedTextField(
                 value = crm,
                 onValueChange = { crm = it },
-                label = { Text("CRM (ex: 12345-SP)") },
+                label = { Text("CRM") },
+                placeholder = { Text("Ex: 12345-SP") },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -273,6 +252,8 @@ fun SignUpDoctor() {
                             onClick = {
                                 if (selected.contains(item)) selected.remove(item)
                                 else selected.add(item)
+
+                                expanded = false
                             }
                         )
                     }
@@ -356,6 +337,10 @@ fun SignUpDoctor() {
             // Botão Cadastrar
             Button(
                 onClick = {
+
+                    var temErro = false
+
+                    // CAMPOS EM BRANCO
                     if (
                         nome.isBlank() ||
                         crm.isBlank() ||
@@ -366,18 +351,53 @@ fun SignUpDoctor() {
                         (selected.contains("Outras") && outraEspecialidade.isBlank())
                     ) {
                         Toast.makeText(context, "Preencha todos os campos obrigatórios.", Toast.LENGTH_LONG).show()
+                        temErro = true
                     }
 
+                    // SENHAS DIFERENTES
+                    if (senha != confirmarSenha) {
+                        Toast.makeText(context, "As senhas não coincidem.", Toast.LENGTH_LONG).show()
+                        temErro = true
+                    }
 
+                    // EMAIL INVÁLIDO
+                    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                        Toast.makeText(context, "E-mail inválido.", Toast.LENGTH_LONG).show()
+                        temErro = true
+                    }
 
-                    registerDoctorAuth(
-                        email = email,
-                        password = senha,
-                        nome = nome,
-                        crm = crm,
-                        especialidade = selected,
-                        context = context
-                    )
+                    // CRM INVÁLIDO
+                    if (!crm.matches(Regex("^\\d{4,6}-[A-Z]{2}$"))) {
+                        Toast.makeText(context, "CRM inválido. Use o formato 12345-SP.", Toast.LENGTH_LONG).show()
+                        temErro = true
+                    }
+
+                    if (!temErro) {
+
+                        val especialidadesFinal = selected.toMutableList()
+
+                        if (selected.contains("Outras")) {
+                            especialidadesFinal.remove("Outras")
+                            especialidadesFinal.add(outraEspecialidade)
+                        }
+
+                        checkCRMExists(crm) { crmExiste ->
+
+                            if (crmExiste) {
+                                Toast.makeText(context, "Este CRM já está cadastrado.", Toast.LENGTH_LONG).show()
+
+                            } else {
+                                registerDoctorAuth(
+                                    email = email,
+                                    password = senha,
+                                    nome = nome,
+                                    crm = crm,
+                                    especialidade = especialidadesFinal,
+                                    context = context
+                                )
+                            }
+                        }
+                    }
                 },
 
                 colors = ButtonDefaults.buttonColors(
