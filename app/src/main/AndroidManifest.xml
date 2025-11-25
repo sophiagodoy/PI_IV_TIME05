@@ -142,5 +142,12 @@
             android:label="Select Doctor"
             android:theme="@style/Theme.Intelimed" />
 
+        <!-- Responding Patient -->
+        <activity
+            android:name=".RespondingPatientActivity"
+            android:exported="false"
+            android:label="Responder Paciente"
+            android:theme="@style/Theme.Intelimed" />
+
     </application>
 </manifest>
