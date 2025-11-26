@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,23 +39,28 @@ class MedicalGuidanceActivity : ComponentActivity() {
 @Composable
 fun OrientacoesMedicas() {
 
-    // Define as cores usados na tela
     val teal = Color(0xFF007C7A)
     val cardBg = Color(0xFFF7FDFC)
-
     val context = LocalContext.current
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {},
+                title = {
+                    Text(
+                        text = "Orientações Médicas",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     IconButton(
                         onClick = {
-                        // Volta para a página principal
                             val intent = Intent(context, MainPatientActivity::class.java)
                             context.startActivity(intent)
-                    }) {
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Voltar",
@@ -79,14 +83,6 @@ fun OrientacoesMedicas() {
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            Text(
-                text = "Orientações Médicas",
-                fontSize = 22.sp,
-                color = teal,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Start
-            )
 
             val orientacoes = listOf(
                 "Mantenha uma alimentação equilibrada, rica em frutas e vegetais." to Icons.Default.Restaurant,
