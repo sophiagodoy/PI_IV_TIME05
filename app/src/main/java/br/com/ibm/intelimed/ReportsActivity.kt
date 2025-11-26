@@ -1,5 +1,5 @@
 /**
- * Tela para o médico selecionar o paciente que deseja resolver
+ * Tela para o médico visualizar os relatórios dos pacientes
  */
 
 package br.com.ibm.intelimed
@@ -31,45 +31,61 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import androidx.compose.material3.ExperimentalMaterial3Api
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+// ===================== CORES =====================
 
-// Paleta de cores utilizada na tela, mantendo o padrão do app
 private val Teal = Color(0xFF007C7A)
 private val CardBg = Color(0xFFFFFFFF)
 private val FeedbackGreen = Color(0xFF4CAF50)
 private val WaitingRed = Color(0xFFF44336)
 
-// Modelo que representa um relatório individual do paciente
+// ===================== MODELO =====================
+
 data class Report(
     val id: String = "",
     val pacienteId: String = "",
+    val pacienteNome: String = "",
     val date: String = "",
     val symptoms: String = "",
     val feedback: String = ""
 )
 
-// Activity responsável pela tela de relatórios
+// ===================== ACTIVITY =====================
+
 class ReportsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Define o conteúdo da tela usando Jetpack Compose
         setContent {
             ReportsScreen()
         }
     }
 }
 
+// ===================== HELPERS =====================
+
 fun convertTimestampToDate(value: Any?): String {
+    if (value == null) return ""
     return try {
-        val millis = value.toString().toLong()
-        val date = java.util.Date(millis)
-        val format = java.text.SimpleDateFormat("dd/MM/yyyy")
+        val millis = when (value) {
+            is Long -> value
+            is Int -> value.toLong()
+            is Double -> value.toLong()
+            is com.google.firebase.Timestamp -> value.toDate().time
+            is String -> value.toLong()
+            else -> return ""
+        }
+        val date = Date(millis)
+        val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         format.format(date)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         ""
     }
 }
+
+// ===================== TELA PRINCIPAL =====================
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,45 +95,86 @@ fun ReportsScreen() {
     // Lista observável de relatórios exibidos na tela
     val reports = remember { mutableStateListOf<Report>() }
 
-    // Guarda o filtro atualmente selecionado (Todos, Com, ou Sem feedback)
+    // Filtro atual (Não respondidos / Respondidos)
     var selectedFilter by remember { mutableStateOf("Não respondidos") }
 
     LaunchedEffect(Unit) {
         val db = FirebaseFirestore.getInstance()
-        val uidMedico = FirebaseAuth.getInstance().currentUser!!.uid
+        val user = FirebaseAuth.getInstance().currentUser
+
+        // Se não tiver médico logado, evita crash
+        if (user == null) {
+            // Se quiser, pode voltar pra tela anterior
+            (context as? Activity)?.finish()
+            return@LaunchedEffect
+        }
+
+        val uidMedico = user.uid
 
         db.collection("medico")
             .document(uidMedico)
             .collection("relatorios")
-            .addSnapshotListener { snapshot, _ ->
+            .addSnapshotListener { snapshot, error ->
                 reports.clear()
 
-                snapshot?.documents?.forEach { doc ->
-                    val data = doc.data ?: return@forEach
-                    val pacienteId = data["pacienteId"]?.toString() ?: ""
+                if (error != null) {
+                    // só limpa e sai, pra não derrubar a tela
+                    return@addSnapshotListener
+                }
 
-                    reports.add(
-                        Report(
-                            id = doc.id,
-                            pacienteId = pacienteId,
-                            date = convertTimestampToDate(data["dataRegistro"]),
-                            symptoms = data["sentimento"]?.toString() ?: "",
-                            feedback = data["feedback"]?.toString() ?: ""
+                val docs = snapshot?.documents ?: return@addSnapshotListener
+                if (docs.isEmpty()) return@addSnapshotListener
+
+                docs.forEach { doc ->
+                    val data = doc.data ?: return@forEach
+                    val pacienteId = (data["pacienteId"] as? String).orElseEmpty()
+
+                    // Se não tem pacienteId, cria o report mesmo assim
+                    if (pacienteId.isBlank()) {
+                        reports.add(
+                            Report(
+                                id = doc.id,
+                                pacienteId = "",
+                                pacienteNome = "Paciente não identificado",
+                                date = convertTimestampToDate(data["dataRegistro"]),
+                                symptoms = data["sentimento"]?.toString() ?: "",
+                                feedback = data["feedback"]?.toString() ?: ""
+                            )
                         )
-                    )
+                    } else {
+                        // Busca o nome do paciente na coleção "paciente"
+                        db.collection("paciente")
+                            .document(pacienteId)
+                            .get()
+                            .addOnSuccessListener { pacienteDoc ->
+                                val nomePaciente =
+                                    pacienteDoc.getString("nome") ?: "Paciente"
+
+                                reports.add(
+                                    Report(
+                                        id = doc.id,
+                                        pacienteId = pacienteId,
+                                        pacienteNome = nomePaciente,
+                                        date = convertTimestampToDate(data["dataRegistro"]),
+                                        symptoms = data["sentimento"]?.toString() ?: "",
+                                        feedback = data["feedback"]?.toString() ?: ""
+                                    )
+                                )
+                            }
+                    }
                 }
             }
     }
 
-
-    // Aplica o filtro conforme a opção escolhida pelo usuário
+    // Aplica o filtro
     val filteredReports = when (selectedFilter) {
         "Respondidos" -> reports.filter { it.feedback.isNotEmpty() }
         "Não respondidos" -> reports.filter { it.feedback.isEmpty() }
         else -> reports
     }
 
-    // Estrutura principal da tela com AppBar
+    // ---------- LAYOUT ----------
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -130,7 +187,6 @@ fun ReportsScreen() {
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        // Volta para a tela anterior (Activity que abriu essa)
                         (context as? Activity)?.finish()
                     }) {
                         Icon(
@@ -148,7 +204,6 @@ fun ReportsScreen() {
             )
         }
     ) { paddingValues ->
-        // Conteúdo principal (filtros e lista)
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -156,7 +211,6 @@ fun ReportsScreen() {
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp, vertical = 24.dp)
         ) {
-            // Linha de botões de filtro
             FilterRow(
                 selected = selectedFilter,
                 onSelect = { selectedFilter = it }
@@ -164,7 +218,6 @@ fun ReportsScreen() {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Caso não existam relatórios no filtro atual
             if (filteredReports.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -173,7 +226,6 @@ fun ReportsScreen() {
                     Text("Nenhum relatório encontrado.", color = Color.Gray)
                 }
             } else {
-                // Lista de relatórios rolável
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -188,9 +240,11 @@ fun ReportsScreen() {
     }
 }
 
-/**
- * Linha de botões de filtro (Todos / Com feedback / Sem feedback)
- */
+// Helper pra evitar null em String
+private fun String?.orElseEmpty() = this ?: ""
+
+// ===================== FILTRO =====================
+
 @Composable
 fun FilterRow(selected: String, onSelect: (String) -> Unit) {
     Row(
@@ -218,15 +272,13 @@ fun FilterRow(selected: String, onSelect: (String) -> Unit) {
             ) {
                 Text(option, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
             }
-            // Adiciona um espaçamento entre os botões, exceto no último
             if (option != filters.last()) Spacer(modifier = Modifier.width(10.dp))
         }
     }
 }
 
-/**
- * Exibe um card com as informações de um relatório específico
- */
+// ===================== CARD DO RELATÓRIO =====================
+
 @Composable
 fun ReportCard(report: Report) {
     val context = LocalContext.current
@@ -260,15 +312,27 @@ fun ReportCard(report: Report) {
                 bottom = 16.dp
             )
         ) {
+            // Nome do paciente
+            Text(
+                text = report.pacienteNome,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = Teal
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            // Data
             Text(
                 text = report.date,
-                fontWeight = FontWeight.Bold,
-                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
                 color = Color.Black
             )
 
             Spacer(Modifier.height(12.dp))
 
+            // Status
             Text(
                 text = statusText,
                 color = statusColor,
@@ -278,6 +342,7 @@ fun ReportCard(report: Report) {
 
             Spacer(Modifier.height(10.dp))
 
+            // Sintomas / sentimento
             Text(
                 text = "Sintomas: ${report.symptoms}",
                 color = Color.DarkGray,

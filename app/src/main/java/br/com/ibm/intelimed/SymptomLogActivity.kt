@@ -13,6 +13,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,9 +30,6 @@ import br.com.ibm.intelimed.ui.theme.IntelimedTheme
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
-import androidx.compose.material3.IconButton
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,17 +70,21 @@ fun RegistroSintomas() {
         topBar = {
             TopAppBar(
                 title = {
+                    // Mesmo padrão das outras telas (título à esquerda)
                     Text(
-                        "Registro de Sintomas",
-                        fontSize = 22.sp,
+                        text = "Registro de Sintomas",
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
-
+                        color = Color.White
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = {
                         val intent = Intent(context, MainPatientActivity::class.java)
-                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        intent.addFlags(
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                    Intent.FLAG_ACTIVITY_NEW_TASK
+                        )
                         context.startActivity(intent)
                         (context as? android.app.Activity)?.finish()
                     }) {
@@ -108,7 +110,7 @@ fun RegistroSintomas() {
                 .padding(20.dp)
                 .fillMaxSize()
                 .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(18.dp) // era 22.dp
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
 
             Text(
@@ -194,7 +196,9 @@ fun RegistroSintomas() {
                 fontWeight = FontWeight.Bold
             )
 
-            PerguntaSimNao("Fez algum procedimento ou cicatrização recente?", fezCicatrizacao) { fezCicatrizacao = it }
+            PerguntaSimNao("Fez algum procedimento ou cicatrização recente?", fezCicatrizacao) {
+                fezCicatrizacao = it
+            }
 
             OutlinedTextField(
                 value = estadoCicatrizacao,
@@ -211,7 +215,9 @@ fun RegistroSintomas() {
                 fontWeight = FontWeight.Bold
             )
 
-            PerguntaSimNao("Tomou algum medicamento nas últimas 24h?", tomouMedicacao) { tomouMedicacao = it }
+            PerguntaSimNao("Tomou algum medicamento nas últimas 24h?", tomouMedicacao) {
+                tomouMedicacao = it
+            }
 
             OutlinedTextField(
                 value = qualMedicacao,
@@ -246,7 +252,6 @@ fun RegistroSintomas() {
 
             // ===================== BOTÃO FINAL =====================
             var mostrarDialogo by remember { mutableStateOf(false) }
-            val context = LocalContext.current
 
             if (mostrarDialogo) {
                 AlertDialog(
@@ -257,7 +262,11 @@ fun RegistroSintomas() {
                         TextButton(onClick = {
                             mostrarDialogo = false
 
-                            Toast.makeText(context, "Sintomas enviados ao médico!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Sintomas enviados ao médico!",
+                                Toast.LENGTH_LONG
+                            ).show()
 
                             val intent = Intent(context, MainPatientActivity::class.java)
                             context.startActivity(intent)
@@ -298,7 +307,11 @@ fun RegistroSintomas() {
                         horarioMedicacao = horarioMedicacao.text,
                         observacoes = observacoes.text,
                         onSuccess = { pacienteId, relatorioId ->
-                            Toast.makeText(context, "Sintomas enviados ao médico!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(
+                                context,
+                                "Sintomas enviados ao médico!",
+                                Toast.LENGTH_LONG
+                            ).show()
 
                             val intent = Intent(context, MainPatientActivity::class.java)
                             context.startActivity(intent)
@@ -316,6 +329,7 @@ fun RegistroSintomas() {
     }
 }
 
+// ===================== ACTIVITY =====================
 
 class SymptomLogActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -327,6 +341,8 @@ class SymptomLogActivity : ComponentActivity() {
         }
     }
 }
+
+// ===================== FIREBASE SAVE =====================
 
 fun savePatientSymptoms(
     context: Context,
@@ -424,47 +440,35 @@ fun savePatientSymptoms(
         }
 }
 
+// ===================== FUNÇÕES AUXILIARES =====================
 
-// Função que busca as especialidades dos médicos no Firestore
 fun getEspecialidades(
-    onSucesso: (List<String>) -> Unit,   // Função que será chamada quando tudo der certo
-    onErro: (Exception) -> Unit          // Função que será chamada caso dê erro
+    onSucesso: (List<String>) -> Unit,
+    onErro: (Exception) -> Unit
 ) {
-    val db = Firebase.firestore          // Obtém a instância do Firestore
+    val db = Firebase.firestore
 
-    db.collection("medico")              // Acessa a coleção "medico"
-        .get()                           // Busca todos os documentos dessa coleção
-        .addOnSuccessListener { task ->  // Quando a busca for bem-sucedida…
+    db.collection("medico")
+        .get()
+        .addOnSuccessListener { task ->
+            val lista = mutableListOf<String>()
 
-            val lista = mutableListOf<String>()  // Lista onde vamos colocar TODAS especialidades encontradas
-
-            for (documento in task) {    // Para cada documento retornado…
-
-                // Pega o campo "especialidade" — pode ser String OU Array
+            for (documento in task) {
                 val espCampo = documento.get("especialidade")
 
-                // Converte o campo para uma lista de Strings independente do tipo
                 val espList = when (espCampo) {
-
-                    is String ->          // Caso o campo seja UMA STRING apenas
-                        listOf(espCampo)  // transforma em lista com 1 item
-
-                    is List<*> ->         // Caso seja uma lista/array
-                        espCampo.map { it.toString() }  // converte cada item para String
-
-                    else ->               // Caso seja nulo ou tipo inesperado
-                        emptyList()       // retorna lista vazia
+                    is String -> listOf(espCampo)
+                    is List<*> -> espCampo.map { it.toString() }
+                    else -> emptyList()
                 }
 
-                // Adiciona todas as especialidades desse médico à lista geral
                 lista.addAll(espList)
             }
 
-            // Remove duplicatas e retorna para quem chamou a função
             onSucesso(lista.distinct())
         }
-        .addOnFailureListener { erro ->   // Se ocorrer erro na leitura do Firestore…
-            onErro(erro)                  // passa o erro para quem chamou a função
+        .addOnFailureListener { erro ->
+            onErro(erro)
         }
 }
 
@@ -507,3 +511,4 @@ fun RegistroSintomasPreview() {
         RegistroSintomas()
     }
 }
+
