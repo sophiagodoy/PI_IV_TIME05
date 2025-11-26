@@ -1,3 +1,6 @@
+/**
+ * Tela que lista os pacientes para o Chat do Médico
+ */
 package br.com.ibm.intelimed
 
 import android.content.Context
@@ -50,92 +53,119 @@ fun AcceptedChatsScreen(
 
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(userId, isMedico) {
 
-        if (userId == null) return@LaunchedEffect
-        loading = true
-
-        if (isMedico) {
-            // MÉDICO → listar pacientes aceitos
-            db.collection("solicitacoes")
-                .whereEqualTo("medicoId", userId)
-                .whereEqualTo("status", "aceito")
-                .addSnapshotListener { result, _ ->
-
-                    if (result == null) return@addSnapshotListener
-
-                    val solicitacoes = result.documents
-
-                    if (solicitacoes.isEmpty()) {
-                        listaPacientes = emptyList()
-                        loading = false
-                        return@addSnapshotListener
-                    }
-
-                    val temp = mutableListOf<PacienteInfo>()
-                    var loaded = 0
-
-                    solicitacoes.forEach { sol ->
-                        val pacienteId = sol.getString("pacienteId") ?: return@forEach
-
-                        db.collection("paciente")
-                            .document(pacienteId)
-                            .get()
-                            .addOnSuccessListener { pDoc ->
-                                temp.add(
-                                    PacienteInfo(
-                                        uid = pacienteId,
-                                        nome = pDoc.getString("nome") ?: "Paciente"
-                                    )
-                                )
-                                loaded++
-                                if (loaded == solicitacoes.size) {
-                                    listaPacientes = temp
-                                    loading = false
-                                }
-                            }
-                    }
-                }
-
+        if (userId == null) {
+            // sem usuário logado → nada pra listar
+            listaPacientes = emptyList()
+            loading = false
         } else {
-            // PACIENTE → listar médico aceito
-            db.collection("solicitacoes")
-                .whereEqualTo("pacienteId", userId)
-                .whereEqualTo("status", "aceito")
-                .addSnapshotListener { result, _ ->
+            loading = true
 
-                    val solicitacoes = result?.documents ?: return@addSnapshotListener
+            if (isMedico) {
+                // MÉDICO → listar pacientes aceitos
+                db.collection("solicitacoes")
+                    .whereEqualTo("medicoId", userId)
+                    .whereEqualTo("status", "aceito")
+                    .addSnapshotListener { result, _ ->
 
-                    if (solicitacoes.isEmpty()) {
-                        listaPacientes = emptyList()
-                        loading = false
-                        return@addSnapshotListener
-                    }
+                        if (result == null) {
+                            listaPacientes = emptyList()
+                            loading = false
+                        } else {
+                            val solicitacoes = result.documents
 
-                    val temp = mutableListOf<PacienteInfo>()
-                    var loaded = 0
+                            if (solicitacoes.isEmpty()) {
+                                listaPacientes = emptyList()
+                                loading = false
+                            } else {
+                                val temp = mutableListOf<PacienteInfo>()
+                                var loaded = 0
 
-                    solicitacoes.forEach { sol ->
-                        val medicoId = sol.getString("medicoId") ?: return@forEach
-
-                        db.collection("medico")
-                            .document(medicoId)
-                            .get()
-                            .addOnSuccessListener { mDoc ->
-                                temp.add(
-                                    PacienteInfo(
-                                        uid = medicoId,
-                                        nome = mDoc.getString("nome") ?: "Médico"
-                                    )
-                                )
-                                loaded++
-                                if (loaded == solicitacoes.size) {
-                                    listaPacientes = temp
-                                    loading = false
+                                for (sol in solicitacoes) {
+                                    val pacienteId = sol.getString("pacienteId")
+                                    if (pacienteId != null) {
+                                        db.collection("paciente")
+                                            .document(pacienteId)
+                                            .get()
+                                            .addOnSuccessListener { pDoc ->
+                                                temp.add(
+                                                    PacienteInfo(
+                                                        uid = pacienteId,
+                                                        nome = pDoc.getString("nome") ?: "Paciente"
+                                                    )
+                                                )
+                                                loaded++
+                                                if (loaded == solicitacoes.size) {
+                                                    listaPacientes = temp
+                                                    loading = false
+                                                }
+                                            }
+                                    } else {
+                                        // se pacienteId for nulo, só ignora esse doc
+                                        loaded++
+                                        if (loaded == solicitacoes.size) {
+                                            listaPacientes = temp
+                                            loading = false
+                                        }
+                                    }
                                 }
                             }
+                        }
                     }
-                }
+
+            } else {
+                // PACIENTE → listar médicos aceitos
+                db.collection("solicitacoes")
+                    .whereEqualTo("pacienteId", userId)
+                    .whereEqualTo("status", "aceito")
+                    .addSnapshotListener { result, _ ->
+
+                        if (result == null) {
+                            listaPacientes = emptyList()
+                            loading = false
+                        } else {
+                            val solicitacoes = result.documents
+
+                            if (solicitacoes.isEmpty()) {
+                                listaPacientes = emptyList()
+                                loading = false
+                            } else {
+                                val temp = mutableListOf<PacienteInfo>()
+                                var loaded = 0
+
+                                for (sol in solicitacoes) {
+                                    val medicoId = sol.getString("medicoId")
+                                    if (medicoId != null) {
+                                        db.collection("medico")
+                                            .document(medicoId)
+                                            .get()
+                                            .addOnSuccessListener { mDoc ->
+                                                temp.add(
+                                                    PacienteInfo(
+                                                        uid = medicoId,
+                                                        nome = mDoc.getString("nome") ?: "Médico"
+                                                    )
+                                                )
+                                                loaded++
+                                                if (loaded == solicitacoes.size) {
+                                                    listaPacientes = temp
+                                                    loading = false
+                                                }
+                                            }
+                                    } else {
+                                        // se medicoId for nulo, só ignora esse doc
+                                        loaded++
+                                        if (loaded == solicitacoes.size) {
+                                            listaPacientes = temp
+                                            loading = false
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+            }
         }
     }
 
@@ -187,8 +217,7 @@ fun AcceptedChatsScreen(
                     items(listaPacientes) { paciente ->
                         ChatListItem(
                             paciente = paciente,
-                            context = context,
-                            isMedico = isMedico
+                            context = context
                         )
                     }
                 }
@@ -200,30 +229,19 @@ fun AcceptedChatsScreen(
 @Composable
 fun ChatListItem(
     paciente: PacienteInfo,
-    context: Context,
-    isMedico: Boolean
+    context: Context
 ) {
     val uidAtual = FirebaseAuth.getInstance().currentUser?.uid
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                // Abrir a tela de chat
                 val intent = Intent(context, ChatActivity::class.java).apply {
-
-                    if (isMedico) {
-                        // Médico abre
-                        putExtra("uidAtual", uidAtual)
-                        putExtra("uidOutro", paciente.uid)
-                        putExtra("nomeOutro", paciente.nome)
-                    } else {
-                        // Paciente abre
-                        putExtra("uidAtual", uidAtual)
-                        putExtra("uidOutro", paciente.uid)
-                        putExtra("nomeOutro", paciente.nome)
-                    }
+                    putExtra("uidAtual", uidAtual)
+                    putExtra("uidOutro", paciente.uid)
+                    putExtra("nomeOutro", paciente.nome)
                 }
-
                 context.startActivity(intent)
             },
         colors = CardDefaults.cardColors(Color(0xFFF7FDFC))
