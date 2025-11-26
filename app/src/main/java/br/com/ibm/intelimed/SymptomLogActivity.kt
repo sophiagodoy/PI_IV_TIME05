@@ -1,4 +1,6 @@
-// TELA DE REGISTRO DE SINTOMAS DO PACIENTE
+/**
+ * Tela de registro de sintomas do Paciente
+ */
 
 package br.com.ibm.intelimed
 
@@ -255,7 +257,10 @@ fun RegistroSintomas() {
                     confirmButton = {
                         TextButton(onClick = {
                             mostrarDialogo = false
-                            val intent = Intent(context, ConfirmationActivity::class.java)
+
+                            Toast.makeText(context, "Sintomas enviados ao médico!", Toast.LENGTH_LONG).show()
+
+                            val intent = Intent(context, MainPatientActivity::class.java)
                             context.startActivity(intent)
                         }) {
                             Text("Sim")
@@ -294,15 +299,10 @@ fun RegistroSintomas() {
                         horarioMedicacao = horarioMedicacao.text,
                         observacoes = observacoes.text,
                         onSuccess = { pacienteId, relatorioId ->
-                            // aqui você decide o que fazer ao salvar:
-                            // pode só mostrar o diálogo, como já fazia:
-                            mostrarDialogo = true
+                            Toast.makeText(context, "Sintomas enviados ao médico!", Toast.LENGTH_LONG).show()
 
-                            // ou se quiser já abrir a tela do médico/teste:
-                            // val intent = Intent(context, RespondingPatientActivity::class.java)
-                            // intent.putExtra("pacienteId", pacienteId)
-                            // intent.putExtra("relatorioId", relatorioId)
-                            // context.startActivity(intent)
+                            val intent = Intent(context, MainPatientActivity::class.java)
+                            context.startActivity(intent)
                         }
                     )
                 },
@@ -418,7 +418,6 @@ fun savePatientSymptoms(
         .document(relatorioId)
         .set(sintomas)
         .addOnSuccessListener {
-            Toast.makeText(context, "Symptoms saved successfully!", Toast.LENGTH_SHORT).show()
             onSuccess(pacienteId, relatorioId)
         }
         .addOnFailureListener { e ->
