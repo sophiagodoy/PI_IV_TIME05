@@ -1,5 +1,8 @@
 package br.com.ibm.intelimed
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -17,10 +20,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class RespondingPatientActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,12 +29,14 @@ class RespondingPatientActivity : ComponentActivity() {
 
         val relatorioId = intent.getStringExtra("relatorioId") ?: ""
         val pacienteId = intent.getStringExtra("pacienteId") ?: ""
+        val somenteVisualizar = intent.getBooleanExtra("somenteVisualizar", false)
 
         setContent {
             IntelimedTheme {
                 RespondingPatient(
                     pacienteId = pacienteId,
-                    relatorioId = relatorioId
+                    relatorioId = relatorioId,
+                    somenteVisualizar = somenteVisualizar
                 )
             }
         }
@@ -44,7 +47,8 @@ class RespondingPatientActivity : ComponentActivity() {
 @Composable
 fun RespondingPatient(
     pacienteId: String,
-    relatorioId: String
+    relatorioId: String,
+    somenteVisualizar: Boolean
 ) {
     val teal = Color(0xFF007C7A)
     val scrollState = rememberScrollState()
@@ -53,6 +57,7 @@ fun RespondingPatient(
     var sintomasMap by remember { mutableStateOf<Map<String, Any>>(emptyMap()) }
     var textoFeedback by remember { mutableStateOf("") }
     var nomePaciente by remember { mutableStateOf("") }
+    var feedbackExistente by remember { mutableStateOf("") }
 
     var carregando by remember { mutableStateOf(true) }
     var erro by remember { mutableStateOf<String?>(null) }
@@ -88,6 +93,11 @@ fun RespondingPatient(
                     erro = "Respostas não encontradas."
                 } else {
                     sintomasMap = data
+                    val fb = data["feedback"]?.toString() ?: ""
+                    feedbackExistente = fb
+                    if (somenteVisualizar && fb.isNotBlank()) {
+                        textoFeedback = fb
+                    }
                 }
                 carregando = false
             }
@@ -104,8 +114,20 @@ fun RespondingPatient(
                     Text(
                         "Respostas de $nomePaciente",
                         color = Color.White,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        (context as? Activity)?.finish()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = Color.White
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = teal)
             )
@@ -119,6 +141,7 @@ fun RespondingPatient(
                 .fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+
             Text(
                 "Respostas do Paciente",
                 fontWeight = FontWeight.Bold,
@@ -137,12 +160,15 @@ fun RespondingPatient(
                         carregando -> {
                             Text("Carregando respostas...", color = Color.Gray)
                         }
+
                         erro != null -> {
                             Text(erro ?: "Erro", color = Color.Red)
                         }
+
                         sintomasMap.isEmpty() -> {
                             Text("Nenhuma resposta encontrada.", color = Color.Gray)
                         }
+
                         else -> {
                             // Lista de campos em ordem + rótulo bonitinho
                             val camposExibicao = listOf(
@@ -166,8 +192,8 @@ fun RespondingPatient(
                                 "tomouMedicacao"     to "Tomou medicação nas últimas 24h?",
                                 "qualMedicacao"      to "Qual medicação?",
                                 "horarioMedicacao"   to "Horário da medicação",
-                                "observacoes"        to "Observações gerais",
-                                "feedback"           to "Feedback do médico"
+                                "observacoes"        to "Observações gerais"
+                                // não coloco "feedback" aqui porque ele é tratado separado abaixo
                             )
 
                             camposExibicao.forEach { (chave, label) ->
@@ -199,64 +225,105 @@ fun RespondingPatient(
                 }
             }
 
-            // FEEDBACK
+            // ==== FEEDBACK ====
             Text(
-                "Responder ao Paciente",
+                text = if (somenteVisualizar) "Feedback enviado" else "Responder ao Paciente",
                 fontWeight = FontWeight.Bold,
                 color = teal,
                 fontSize = 20.sp
             )
 
             OutlinedTextField(
-                value = textoFeedback,
-                onValueChange = { textoFeedback = it },
-                label = { Text("Escreva seu feedback aqui") },
+                value = if (somenteVisualizar) feedbackExistente else textoFeedback,
+                onValueChange = {
+                    if (!somenteVisualizar) textoFeedback = it
+                },
+                label = {
+                    Text(
+                        if (somenteVisualizar)
+                            "Feedback enviado"
+                        else
+                            "Escreva seu feedback aqui"
+                    )
+                },
+                enabled = !somenteVisualizar,
+                readOnly = somenteVisualizar,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(150.dp)
             )
 
-            Button(
-                onClick = {
-                    if (textoFeedback.isNotBlank()) {
-                        db.collection("paciente")
-                            .document(pacienteId)
-                            .collection("sintomas")
-                            .document(relatorioId)
-                            .update("feedback", textoFeedback)
-                            .addOnSuccessListener {
+            if (!somenteVisualizar) {
+                Button(
+                    onClick = {
+                        if (textoFeedback.isNotBlank()) {
+                            val uidMedico = FirebaseAuth.getInstance().currentUser?.uid
+                            if (uidMedico == null) {
                                 Toast.makeText(
                                     context,
-                                    "Feedback enviado com sucesso!",
+                                    "Usuário não autenticado.",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                textoFeedback = ""
-                            }
-                            .addOnFailureListener {
-                                Toast.makeText(
-                                    context,
-                                    "Erro ao enviar feedback.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                return@Button
                             }
 
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "Escreva um feedback antes de enviar.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = teal),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Enviar Feedback", fontSize = 18.sp)
+                            // 1) Atualiza no documento do paciente
+                            db.collection("paciente")
+                                .document(pacienteId)
+                                .collection("sintomas")
+                                .document(relatorioId)
+                                .update("feedback", textoFeedback)
+                                .addOnSuccessListener {
+                                    // 2) Atualiza também na coleção do médico,
+                                    // para que entre em "Respondidos"
+                                    db.collection("medico")
+                                        .document(uidMedico)
+                                        .collection("relatorios")
+                                        .document(relatorioId)
+                                        .update("feedback", textoFeedback)
+                                        .addOnSuccessListener {
+                                            Toast.makeText(
+                                                context,
+                                                "Feedback enviado com sucesso!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+                                            // Volta para "Meus relatórios"
+                                            (context as? Activity)?.finish()
+                                        }
+                                        .addOnFailureListener {
+                                            Toast.makeText(
+                                                context,
+                                                "Erro ao salvar feedback na lista de relatórios.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                }
+                                .addOnFailureListener {
+                                    Toast.makeText(
+                                        context,
+                                        "Erro ao enviar feedback.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Escreva um feedback antes de enviar.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = teal),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Enviar Feedback", fontSize = 18.sp)
+                }
             }
         }
     }
 }
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
@@ -264,7 +331,8 @@ fun RespondingPatientPreview() {
     IntelimedTheme {
         RespondingPatient(
             pacienteId = "TESTE",
-            relatorioId = "TESTE"
+            relatorioId = "TESTE",
+            somenteVisualizar = false
         )
     }
 }

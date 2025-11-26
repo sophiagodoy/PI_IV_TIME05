@@ -89,13 +89,11 @@ fun ReportsScreen() {
         db.collection("medico")
             .document(uidMedico)
             .collection("relatorios")
-            .get()
-            .addOnSuccessListener { task ->
+            .addSnapshotListener { snapshot, _ ->
                 reports.clear()
 
-                for (doc in task) {
-                    val data = doc.data
-
+                snapshot?.documents?.forEach { doc ->
+                    val data = doc.data ?: return@forEach
                     val pacienteId = data["pacienteId"]?.toString() ?: ""
 
                     reports.add(
@@ -110,6 +108,7 @@ fun ReportsScreen() {
                 }
             }
     }
+
 
     // Aplica o filtro conforme a opção escolhida pelo usuário
     val filteredReports = when (selectedFilter) {
@@ -245,9 +244,11 @@ fun ReportCard(report: Report) {
             .fillMaxWidth()
             .shadow(elevation = 4.dp, shape = RoundedCornerShape(20.dp))
             .clickable {
-                val intent = Intent(context, RespondingPatientActivity::class.java)
-                intent.putExtra("relatorioId", report.id)
-                intent.putExtra("pacienteId", report.pacienteId)
+                val intent = Intent(context, RespondingPatientActivity::class.java).apply {
+                    putExtra("relatorioId", report.id)
+                    putExtra("pacienteId", report.pacienteId)
+                    putExtra("somenteVisualizar", report.feedback.isNotEmpty())
+                }
                 context.startActivity(intent)
             }
     ) {

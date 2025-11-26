@@ -11,7 +11,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -24,9 +25,18 @@ import br.com.ibm.intelimed.ui.theme.IntelimedTheme
 class DoctorFeedbackActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val feedbackText = intent.getStringExtra("feedback") ?: ""
+        val dataRegistro = intent.getStringExtra("dataRegistro") ?: ""
+        val sentimento = intent.getStringExtra("sentimento") ?: ""
+
         setContent {
             IntelimedTheme {
-                DoctorFeedbackScreen()
+                DoctorFeedbackScreen(
+                    feedbackText = feedbackText,
+                    dataRegistro = dataRegistro,
+                    sentimento = sentimento
+                )
             }
         }
     }
@@ -34,17 +44,14 @@ class DoctorFeedbackActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DoctorFeedbackScreen() {
+fun DoctorFeedbackScreen(
+    feedbackText: String,
+    dataRegistro: String,
+    sentimento: String
+) {
     val teal = Color(0xFF007C7A)
     val scrollState = rememberScrollState()
-    val context = LocalContext.current   // 👈 usa o context daqui
-
-    // (depois você puxa do Firestore)
-    val nomeMedico = "Dr. João"
-    val respostaMedico =
-        "Olá Maria, observei seus sintomas e recomendo repouso hoje. " +
-                "Continue se hidratando bem e, caso a febre suba acima de 38.5°C, procure atendimento. " +
-                "Vou acompanhar sua evolução!"
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -52,13 +59,13 @@ fun DoctorFeedbackScreen() {
                 title = {
                     Text(
                         "Resposta do médico",
+                        fontSize = 20.sp,
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        // fecha só essa tela
                         (context as? Activity)?.finish()
                     }) {
                         Icon(
@@ -83,15 +90,37 @@ fun DoctorFeedbackScreen() {
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-            // ===== TÍTULO =====
             Text(
-                "Feedback de $nomeMedico",
+                "Detalhes do seu relatório",
                 fontWeight = FontWeight.Bold,
                 color = teal,
                 fontSize = 20.sp
             )
 
-            // ===== CARD DO FEEDBACK =====
+            if (dataRegistro.isNotBlank()) {
+                Text(
+                    text = "Data do registro: $dataRegistro",
+                    fontSize = 15.sp,
+                    color = Color.DarkGray
+                )
+            }
+
+            if (sentimento.isNotBlank()) {
+                Text(
+                    text = "Como você relatou que estava: $sentimento",
+                    fontSize = 15.sp,
+                    color = Color.DarkGray
+                )
+            }
+
+            // CARD DO FEEDBACK
+            Text(
+                "Feedback do médico",
+                fontWeight = FontWeight.Bold,
+                color = teal,
+                fontSize = 18.sp
+            )
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
@@ -99,7 +128,7 @@ fun DoctorFeedbackScreen() {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = respostaMedico,
+                        text = feedbackText.ifBlank { "Este relatório ainda não possui feedback do médico." },
                         fontSize = 16.sp,
                         color = Color.DarkGray
                     )
@@ -113,6 +142,10 @@ fun DoctorFeedbackScreen() {
 @Composable
 fun DoctorFeedbackPreview() {
     IntelimedTheme {
-        DoctorFeedbackScreen()
+        DoctorFeedbackScreen(
+            feedbackText = "Exemplo de feedback do médico para o paciente.",
+            dataRegistro = "01/11/2025",
+            sentimento = "Com dor de cabeça e febre leve"
+        )
     }
 }

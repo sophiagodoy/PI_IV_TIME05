@@ -157,5 +157,11 @@
             android:label="Feedback do Médico"
             android:theme="@style/Theme.Intelimed" />
 
+        <activity
+            android:name=".PatientFeedbackListActivity"
+            android:exported="false"
+            android:label="Lista Feedbaks medico quanto aos relatorios diarios do proprio paciente "
+            android:theme="@style/Theme.Intelimed" />
+
     </application>
 </manifest>
