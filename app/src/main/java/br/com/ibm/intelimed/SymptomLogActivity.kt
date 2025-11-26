@@ -406,7 +406,7 @@ fun savePatientSymptoms(
                 db.collection("medico")
                     .document(medicoId)
                     .collection("relatorios")
-                    .document(relatorioId) // ⭐ mesmo ID
+                    .document(relatorioId)
                     .set(sintomas)
             }
         }
@@ -415,7 +415,7 @@ fun savePatientSymptoms(
     db.collection("paciente")
         .document(pacienteId)
         .collection("sintomas")
-        .document(relatorioId) // ⭐ mesmo ID
+        .document(relatorioId)
         .set(sintomas)
         .addOnSuccessListener {
             Toast.makeText(context, "Symptoms saved successfully!", Toast.LENGTH_SHORT).show()
