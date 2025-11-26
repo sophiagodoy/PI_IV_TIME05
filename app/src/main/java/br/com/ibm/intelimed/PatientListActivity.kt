@@ -5,6 +5,7 @@
 package br.com.ibm.intelimed
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -20,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,7 +42,11 @@ class PatientListActivity : ComponentActivity() {
     }
 }
 
+// ---------------------- MODELOS ----------------------
+
 data class Paciente(
+    val solicitacaoId: String = "",
+    val pacienteId: String = "",
     val nome: String = "",
     val email: String = ""
 )
@@ -53,6 +59,8 @@ data class Solicitacao(
     val status: String = ""
 )
 
+// ---------------------- FIREBASE ----------------------
+
 fun listenAcceptedPatients(medicoId: String, onResult: (List<Paciente>) -> Unit) {
     val db = Firebase.firestore
 
@@ -60,32 +68,34 @@ fun listenAcceptedPatients(medicoId: String, onResult: (List<Paciente>) -> Unit)
         .whereEqualTo("medicoId", medicoId)
         .whereEqualTo("status", "aceito")
         .addSnapshotListener { task, _ ->
-
             if (task == null || task.isEmpty) {
                 onResult(emptyList())
-            } else {
-                val lista = mutableListOf<Paciente>()
-                var contador = task.size()
+                return@addSnapshotListener
+            }
 
-                task.forEach { solicitacao ->
+            val lista = mutableListOf<Paciente>()
+            var contador = task.size()
 
-                    val pacienteId = solicitacao.getString("pacienteId") ?: ""
+            task.forEach { solicitacao ->
 
-                    db.collection("paciente").document(pacienteId).get()
-                        .addOnSuccessListener { paciente ->
-                            lista.add(
-                                Paciente(
-                                    nome = paciente.getString("nome") ?: "",
-                                    email = paciente.getString("email") ?: ""
-                                )
+                val pacienteId = solicitacao.getString("pacienteId") ?: ""
+                val solicitacaoId = solicitacao.id
+
+                db.collection("paciente").document(pacienteId).get()
+                    .addOnSuccessListener { paciente ->
+
+                        lista.add(
+                            Paciente(
+                                solicitacaoId = solicitacaoId,
+                                pacienteId = pacienteId,
+                                nome = paciente.getString("nome") ?: "",
+                                email = paciente.getString("email") ?: ""
                             )
+                        )
 
-                            contador--
-                            if (contador == 0) {
-                                onResult(lista)
-                            }
-                        }
-                }
+                        contador--
+                        if (contador == 0) onResult(lista)
+                    }
             }
         }
 }
@@ -100,32 +110,32 @@ fun listenSolicitacoesPendentes(medicoId: String, onResult: (List<Solicitacao>) 
 
             if (task == null || task.isEmpty) {
                 onResult(emptyList())
-            } else {
-                val lista = mutableListOf<Solicitacao>()
-                var contador = task.size()
+                return@addSnapshotListener
+            }
 
-                task.forEach { doc ->
-                    val pacienteId = doc.getString("pacienteId") ?: ""
+            val lista = mutableListOf<Solicitacao>()
+            var contador = task.size()
 
-                    db.collection("paciente").document(pacienteId).get()
-                        .addOnSuccessListener { paciente ->
+            task.forEach { doc ->
 
-                            lista.add(
-                                Solicitacao(
-                                    solicitacaoId = doc.id,
-                                    pacienteId = pacienteId,
-                                    nome = paciente.getString("nome") ?: "",
-                                    email = paciente.getString("email") ?: "",
-                                    status = doc.getString("status") ?: ""
-                                )
+                val pacienteId = doc.getString("pacienteId") ?: ""
+
+                db.collection("paciente").document(pacienteId).get()
+                    .addOnSuccessListener { paciente ->
+
+                        lista.add(
+                            Solicitacao(
+                                solicitacaoId = doc.id,
+                                pacienteId = pacienteId,
+                                nome = paciente.getString("nome") ?: "",
+                                email = paciente.getString("email") ?: "",
+                                status = doc.getString("status") ?: ""
                             )
+                        )
 
-                            contador--
-                            if (contador == 0) {
-                                onResult(lista)
-                            }
-                        }
-                }
+                        contador--
+                        if (contador == 0) onResult(lista)
+                    }
             }
         }
 }
@@ -140,6 +150,13 @@ fun recusarSolicitacao(solicitacaoId: String) {
     Firebase.firestore.collection("solicitacoes")
         .document(solicitacaoId)
         .update("status", "recusado")
+}
+
+// encerrar atendimento depois de aceito
+fun encerrarAtendimento(solicitacaoId: String) {
+    Firebase.firestore.collection("solicitacoes")
+        .document(solicitacaoId)
+        .update("status", "encerrado")
 }
 
 // ---------------------- TELA PRINCIPAL ----------------------
@@ -355,11 +372,42 @@ fun CardSolicitacao(solicitacao: Solicitacao) {
     }
 }
 
-
 // ---------------------- CARD PACIENTE ----------------------
 
 @Composable
 fun PacienteCardModern(paciente: Paciente) {
+    val context = LocalContext.current
+    var mostrarDialogo by remember { mutableStateOf(false) }
+
+    // Dialog de confirmação para encerrar atendimento
+    if (mostrarDialogo) {
+        AlertDialog(
+            onDismissRequest = { mostrarDialogo = false },
+            title = { Text("Encerrar atendimento") },
+            text = {
+                Text("Tem certeza que deseja encerrar o atendimento de ${paciente.nome}?")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    mostrarDialogo = false
+                    encerrarAtendimento(paciente.solicitacaoId)
+                    Toast.makeText(
+                        context,
+                        "Atendimento encerrado para ${paciente.nome}.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }) {
+                    Text("Sim")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrarDialogo = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Card(
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -368,22 +416,40 @@ fun PacienteCardModern(paciente: Paciente) {
             .padding(vertical = 6.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp)
         ) {
-            Column {
-                Text(
-                    text = paciente.nome,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF007C7A)
-                )
-                Text(
-                    text = paciente.email,
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = paciente.nome,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF007C7A)
+                    )
+                    Text(
+                        text = paciente.email,
+                        fontSize = 14.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                if (paciente.solicitacaoId.isNotBlank()) {
+                    TextButton(
+                        onClick = { mostrarDialogo = true }
+                    ) {
+                        Text(
+                            "Encerrar",
+                            color = Color.Red,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
         }
     }
