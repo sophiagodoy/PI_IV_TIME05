@@ -211,7 +211,7 @@ fun AcceptedChatsScreen(
                 loading -> CircularProgressIndicator(color = Color(0xFF007C7A))
 
                 listaPacientes.isEmpty() ->
-                    Text("Nenhuma conversa disponível.", color = Color.Gray)
+                    Text("Nenhuma conversa disponível no momento. Aguarde um médico aceitar você ou solicite um novo atendimento.", color = Color.Gray)
 
                 else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(listaPacientes) { paciente ->
