@@ -1,5 +1,9 @@
+/**
+ * Texto dos termos de uso
+ */
 package br.com.ibm.intelimed
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -10,6 +14,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -28,14 +34,16 @@ class TermsFullActivity : ComponentActivity() {
         val tipoUsuario = intent.getStringExtra("tipoUsuario")
         setContent {
             IntelimedTheme {
-                TermsFullScreen(tipoUsuario)
+                TermsFullScreen(tipoUsuario = tipoUsuario)
             }
         }
     }
 }
 
 @Composable
-fun TermsFullScreen(tipoUsuario: String?) {
+fun TermsFullScreen(
+    tipoUsuario: String?
+) {
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
@@ -73,71 +81,97 @@ fun TermsFullScreen(tipoUsuario: String?) {
         """.trimIndent()
     }
 
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF2FA49F)), // fundo verde
-        contentAlignment = Alignment.Center
+            .background(Color(0xFF2FA49F))
     ) {
-        Column(
+        Card(
             modifier = Modifier
+                .align(Alignment.Center)          // centraliza o card
+                .padding(horizontal = 24.dp)       // margem lateral
                 .fillMaxWidth()
-                .fillMaxHeight(0.9f)
-                .background(Color.White, shape = RoundedCornerShape(16.dp))
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            Text(
-                text = "Termos e Privacidade",
-                fontSize = 22.sp,
-                color = Color(0xFF2FA49F)
+                .fillMaxHeight(0.75f),             // **ocupa só 75% da altura da tela**
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White
             )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Coluna rolável
+        ) {
             Column(
                 modifier = Modifier
-                    .weight(1f) // ocupa espaço disponível dentro do card
-                    .verticalScroll(scrollState)
+                    .padding(24.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = termosCompletos,
-                    fontSize = 16.sp,
-                    color = Color.Black,
-                    lineHeight = 22.sp
-                )
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    Toast.makeText(context, "Bem-vindo", Toast.LENGTH_SHORT).show()
-                    if (tipoUsuario == "medico") {
-                        context.startActivity(Intent(context, MainDoctorActivity::class.java))
-                    } else {
-                        context.startActivity(Intent(context, MainPatientActivity::class.java))
+                // Seta + título
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            (context as? android.app.Activity)?.finish()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar",
+                            tint = Color(0xFF2FA49F)
+                        )
                     }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2FA49F),
-                    contentColor = Color.White
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Aceitar e Continuar", fontSize = 18.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Termos e Privacidade",
+                        fontSize = 22.sp,
+                        color = Color(0xFF2FA49F)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Texto rolável dentro do card
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(scrollState)
+                ) {
+                    Text(
+                        text = termosCompletos,
+                        fontSize = 16.sp,
+                        color = Color.Black,
+                        lineHeight = 22.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        Toast.makeText(context, "Bem-vindo", Toast.LENGTH_SHORT).show()
+                        if (tipoUsuario == "medico") {
+                            context.startActivity(Intent(context, MainDoctorActivity::class.java))
+                        } else {
+                            context.startActivity(Intent(context, MainPatientActivity::class.java))
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2FA49F),
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Aceitar e Continuar", fontSize = 18.sp)
+                }
             }
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun TermsFullPreview() {
     IntelimedTheme {
