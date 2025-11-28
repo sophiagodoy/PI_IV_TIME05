@@ -1,8 +1,10 @@
 package br.com.ibm.intelimed
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,20 +24,113 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import br.com.ibm.intelimed.network.Cliente
 import br.com.ibm.intelimed.ui.theme.IntelimedTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 data class Mensagem(
     val text: String,
-    val senderId: String
+    val senderId: String,
+    val timestamp: Long
 )
 
-class ChatActivity : ComponentActivity() {
+class ChatViewModel(
+    private var uidAtual: String,
+    private var uidOutro: String
+) : ViewModel() {
 
-    private val cliente = Cliente()
+    val mensagens: SnapshotStateList<Mensagem> = mutableStateListOf()
+    private val filaEnvio = mutableListOf<Mensagem>()
+    var cliente = Cliente()
+    private var conectado = false
+
+    init {
+        configurarListener()
+        conectar()
+    }
+
+    private fun configurarListener() {
+        cliente.setListener { pedido ->
+            val msg = Mensagem(pedido.getConteudo(), pedido.getUidRemetente(), pedido.getTimestamp())
+            synchronized(mensagens) {
+                if (!mensagens.any { it.timestamp == msg.timestamp && it.senderId == msg.senderId }) {
+                    mensagens.add(msg)
+                    mensagens.sortBy { it.timestamp }
+                }
+            }
+        }
+    }
+
+    private fun conectar() {
+        viewModelScope.launch(Dispatchers.IO) {
+            while (!conectado) {
+                try {
+                    cliente.conectarServidor("10.0.2.2", 3000, uidAtual, uidOutro)
+                    conectado = true
+                    enviarFilaPendentes()
+                } catch (e: Exception) {
+                    delay(2000)
+                }
+            }
+        }
+    }
+
+    private fun enviarFilaPendentes() {
+        synchronized(filaEnvio) {
+            filaEnvio.forEach { enviarMensagemParaServidor(it) }
+            filaEnvio.clear()
+        }
+    }
+
+    fun enviarMensagem(conteudo: String) {
+        if (conteudo.isBlank()) return
+        val msg = Mensagem(conteudo, uidAtual, System.currentTimeMillis())
+        synchronized(mensagens) {
+            mensagens.add(msg)
+            mensagens.sortBy { it.timestamp }
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (!conectado) conectar()
+                enviarMensagemParaServidor(msg)
+            } catch (e: Exception) {
+                synchronized(filaEnvio) { filaEnvio.add(msg) }
+            }
+        }
+    }
+
+    private fun enviarMensagemParaServidor(msg: Mensagem) {
+        cliente.enviarMensagem(msg.text)
+    }
+
+    fun trocarConta(novoUidAtual: String, novoUidOutro: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // 1. Fecha cliente antigo
+            cliente.fecharConexao()
+
+            // 2. Cria um novo cliente
+            cliente = Cliente()
+            uidAtual = novoUidAtual
+            uidOutro = novoUidOutro
+            configurarListener()
+
+            // 3. Conecta ao servidor
+            conectar()
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        cliente.fecharConexao()
+        conectado = false
+    }
+}
+
+// Activity
+class ChatActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,25 +138,13 @@ class ChatActivity : ComponentActivity() {
         val uidAtual = intent.getStringExtra("uidAtual") ?: ""
         val uidOutro = intent.getStringExtra("uidOutro") ?: ""
         val nomeOutro = intent.getStringExtra("nomeOutro") ?: "Chat"
-        val mensagens = mutableStateListOf<Mensagem>()
 
-        // Conecta ao servidor em background
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                cliente.conectarServidor("10.0.2.2", 3000, uidAtual)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
-        // Define listener para receber mensagens do servidor
-        cliente.setListener { pedido ->
-            val msg = Mensagem(
-                text = pedido.getConteudo(),
-                senderId = pedido.getUidRemetente()
-            )
-            runOnUiThread {
-                mensagens.add(msg)
+        val viewModel: ChatViewModel by viewModels {
+            object : androidx.lifecycle.ViewModelProvider.Factory {
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    @Suppress("UNCHECKED_CAST")
+                    return ChatViewModel(uidAtual, uidOutro) as T
+                }
             }
         }
 
@@ -71,8 +154,7 @@ class ChatActivity : ComponentActivity() {
                     uidAtual = uidAtual,
                     uidOutro = uidOutro,
                     nomeOutro = nomeOutro,
-                    cliente = cliente,
-                    mensagens = mensagens
+                    viewModel = viewModel
                 )
             }
         }
@@ -85,10 +167,10 @@ fun ChatScreen(
     uidAtual: String,
     uidOutro: String,
     nomeOutro: String,
-    cliente: Cliente,
-    mensagens: SnapshotStateList<Mensagem>
+    viewModel: ChatViewModel
 ) {
     val teal = Color(0xFF007C7A)
+    val mensagens = viewModel.mensagens
     var mensagemDigitada by remember { mutableStateOf("") }
     val context = LocalContext.current
 
@@ -97,25 +179,13 @@ fun ChatScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(
-                            nomeOutro,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            "Chat",
-                            color = Color.White.copy(0.8f),
-                            fontSize = 14.sp
-                        )
+                        Text(nomeOutro, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Chat", color = Color.White.copy(0.8f), fontSize = 14.sp)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = { (context as? ComponentActivity)?.finish() }) {
-                        Icon(
-                            Icons.Filled.ArrowBackIosNew,
-                            contentDescription = "Voltar",
-                            tint = Color.White
-                        )
+                        Icon(Icons.Filled.ArrowBackIosNew, contentDescription = "Voltar", tint = Color.White)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = teal)
@@ -127,58 +197,33 @@ fun ChatScreen(
                 onChange = { mensagemDigitada = it },
                 onSend = {
                     if (mensagemDigitada.isNotBlank()) {
-                        // Envia ao servidor em background
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                cliente.enviarMensagem(mensagemDigitada, uidOutro)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
-
-                        // Adiciona localmente
-                        mensagens.add(Mensagem(text = mensagemDigitada, senderId = uidAtual))
+                        viewModel.enviarMensagem(mensagemDigitada)
                         mensagemDigitada = ""
                     }
                 }
             )
         }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(mensagens) { msg ->
-                    MensagemBubble(
-                        texto = msg.text,
-                        enviadaPeloUsuario = msg.senderId == uidAtual
-                    )
-                }
+            items(mensagens) { msg ->
+                MensagemBubble(msg.text, msg.senderId == uidAtual)
             }
         }
     }
 }
 
 @Composable
-fun ChatInputBar(
-    mensagem: String,
-    onChange: (String) -> Unit,
-    onSend: () -> Unit
-) {
+fun ChatInputBar(mensagem: String, onChange: (String) -> Unit, onSend: () -> Unit) {
     val teal = Color(0xFF007C7A)
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -186,9 +231,7 @@ fun ChatInputBar(
             value = mensagem,
             onValueChange = onChange,
             placeholder = { Text("Enviar mensagem") },
-            modifier = Modifier
-                .weight(1f)
-                .height(50.dp),
+            modifier = Modifier.weight(1f),
             shape = RoundedCornerShape(25.dp),
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color(0xFFF7FDFC),
@@ -197,20 +240,12 @@ fun ChatInputBar(
                 unfocusedIndicatorColor = Color.Transparent,
             )
         )
-
         Spacer(modifier = Modifier.width(8.dp))
-
         IconButton(
             onClick = onSend,
-            modifier = Modifier
-                .size(45.dp)
-                .background(teal, CircleShape)
+            modifier = Modifier.size(45.dp).background(teal, CircleShape)
         ) {
-            Icon(
-                Icons.Default.Send,
-                contentDescription = "Enviar",
-                tint = Color.White
-            )
+            Icon(Icons.Default.Send, contentDescription = "Enviar", tint = Color.White)
         }
     }
 }
@@ -219,19 +254,22 @@ fun ChatInputBar(
 fun MensagemBubble(texto: String, enviadaPeloUsuario: Boolean) {
     val teal = Color(0xFF007C7A)
     val bg = if (enviadaPeloUsuario) teal else Color(0xFFEFEFEF)
-    val textoCor = if (enviadaPeloUsuario) Color.White else Color.Black
-
+    val cor = if (enviadaPeloUsuario) Color.White else Color.Black
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (enviadaPeloUsuario) Arrangement.End else Arrangement.Start
     ) {
-        Box(
-            modifier = Modifier
-                .background(bg, RoundedCornerShape(16.dp))
-                .padding(12.dp)
-                .widthIn(max = 280.dp)
+        Surface(
+            color = bg,
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.padding(4.dp)
         ) {
-            Text(texto, color = textoCor, fontSize = 16.sp)
+            Text(
+                texto,
+                modifier = Modifier.padding(12.dp).widthIn(max = 260.dp),
+                color = cor,
+                fontSize = 16.sp
+            )
         }
     }
 }

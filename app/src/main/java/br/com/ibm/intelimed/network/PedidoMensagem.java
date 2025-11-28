@@ -11,10 +11,13 @@ public class PedidoMensagem extends Pedido {
     private String conteudoCriptografado;
     private String uidDestinatario;
     private String chaveBase64;
+    private long timestamp;
 
     public PedidoMensagem(String uidRemetente, String conteudo, String uidDestinatario) throws Exception {
         this.uidRemetente = uidRemetente;
         this.uidDestinatario = uidDestinatario;
+
+
         try {
             SecretKey chave = gerarChaveAleatoria();
             this.chaveBase64 = Base64.getEncoder().encodeToString(chave.getEncoded());
@@ -24,11 +27,12 @@ public class PedidoMensagem extends Pedido {
         }
     }
 
-    public PedidoMensagem(String uidRemetente, String conteudo, String uidDestinatario, String chaveBase64) throws Exception {
+    public PedidoMensagem(String uidRemetente, String conteudo, String uidDestinatario, String chaveBase64, long timestamp) throws Exception {
         this.uidRemetente = uidRemetente;
         this.uidDestinatario = uidDestinatario;
         this.conteudoCriptografado = conteudo;
         this.chaveBase64 = chaveBase64;
+        this.timestamp = timestamp;
     }
 
     public String getUidRemetente() {
@@ -54,6 +58,10 @@ public class PedidoMensagem extends Pedido {
 
     public String getChaveBase64() {
         return this.chaveBase64;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     private SecretKey gerarChaveAleatoria() throws Exception {
