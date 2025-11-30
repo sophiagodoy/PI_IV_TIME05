@@ -39,6 +39,21 @@ mobile e arquitetura organizada.
 
 ------------------------------------------------------------------------
 
+### 💬 Troca de mensagens entre médico e paciente
+
+A comunicação médico–paciente utiliza um módulo de **cliente-servidor** desenvolvido separadamente.  
+O código completo deste módulo está disponível no repositório:
+
+🔗 **https://github.com/ryandias1/Cliente-Servidor**
+
+Para utilizar, basta clonar o repositório:
+
+```bash
+git clone git@github.com:ryandias1/Cliente-Servidor.git
+```
+
+------------------------------------------------------------------------
+
 ## ▶️ Como Executar o Projeto
 
 ### 1️⃣ Clone o Repositório
